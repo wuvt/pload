@@ -47,7 +47,7 @@ def upload():
             key_filename=current_app.config['SFTP_KEY_FILE'])
         sftp = client.open_sftp()
 
-        if not form.data.overwrite and sftp_exists(sftp, dest_path):
+        if not form.overwrite.data and sftp_exists(sftp, dest_path):
             flash("A playlist already exists for that date and time slot. "
                   "You'll need to either overwrite the existing playlist, or "
                   "pick another date or time slot.")
