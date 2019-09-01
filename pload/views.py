@@ -12,13 +12,10 @@ bp = Blueprint('pload', __name__)
 def sftp_exists(sftp, path):
     try:
         sftp.stat(path)
-    except IOError as e:
-        if e[0] == 2:
-            return False
-        else:
-            raise
-    else:
-        return True
+    except FileNotFoundError:
+        return False
+
+    return True
 
 
 @bp.route('/', methods=['GET', 'POST'])
