@@ -1,3 +1,4 @@
+PLOAD_NAME = "Playlist Loader"
 PROXY_FIX_NUM_PROXIES = 1
 
 TIME_SLOTS = {

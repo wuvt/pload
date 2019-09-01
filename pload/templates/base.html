@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8" />
 
-        <title>{% if page_title %}{{ page_title }} &ndash; {% endif %}Playlist Loader</title>
+        <title>{% if page_title %}{{ page_title }} &ndash; {% endif %}{{ config.PLOAD_NAME }}</title>
 
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
     </head>
@@ -11,7 +11,7 @@
 {% block header %}
         <nav class="navbar navbar-expand-lg navbar-light bg-light mb-2">
             <div class="container">
-                <a class="navbar-brand" href="{{ url_for('pload.upload') }}">Playlist Loader</a>
+                <a class="navbar-brand" href="{{ url_for('pload.upload') }}">{{ config.PLOAD_NAME }}</a>
             </div>
         </nav>
 {% endblock %}
