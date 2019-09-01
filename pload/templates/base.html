@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+
+        <title>{% if page_title %}{{ page_title }} &ndash; {% endif %}Playlist Loader</title>
+
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+    </head>
+    <body{% block bodyattrib %}{% endblock %}>
+{% block header %}
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-2">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('pload.upload') }}">Playlist Loader</a>
+            </div>
+        </nav>
+{% endblock %}
+
+<div class="container">
+    {% for msg in get_flashed_messages() %}
+    <div class="alert alert-info">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {{ msg }}
+    </div>
+    {% endfor %}
+</div>
+
+<div class="container-fluid">
+{% block content %}
+{% endblock %}
+</div>
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+{% endblock %}
+    </body>
+</html>

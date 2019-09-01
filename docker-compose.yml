@@ -1,0 +1,12 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+    - APP_CONFIG_PATH=/data/config/config.json
+    ports:
+    - "9070:5000"
+    volumes:
+    - ../pload-config:/data/config
