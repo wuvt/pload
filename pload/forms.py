@@ -1,8 +1,9 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import validators
-from wtforms.fields import SelectField
+from wtforms.fields import BooleanField, DateField, SelectField
 from wtforms.widgets import FileInput, Select
+from wtforms.widgets.html5 import DateInput
 
 
 class BootstrapWidgetMixin(object):
@@ -16,6 +17,10 @@ class BootstrapWidgetMixin(object):
         return super().__call__(field, **kwargs)
 
 
+class BootstrapDateInput(BootstrapWidgetMixin, DateInput):
+    pass
+
+
 class BootstrapFileInput(BootstrapWidgetMixin, FileInput):
     pass
 
@@ -25,6 +30,10 @@ class BootstrapSelect(BootstrapWidgetMixin, Select):
 
 
 class PlaylistForm(FlaskForm):
+    date = DateField(
+        "Date",
+        validators=[validators.InputRequired()],
+        widget=BootstrapDateInput())
     slot = SelectField(
         "Time Slot",
         validators=[validators.required()],
@@ -36,3 +45,4 @@ class PlaylistForm(FlaskForm):
             FileAllowed(['m3u'], "Only .m3u files may be uploaded."),
         ],
         widget=BootstrapFileInput())
+    overwrite = BooleanField("Overwrite the existing playlist (if one exists)")
