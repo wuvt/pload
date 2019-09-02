@@ -9,3 +9,11 @@ TIME_SLOTS = {
     'jazz': "Rush Hour Jazz (17:00-19:00)",
     'night': "Evening (19:00-00:00)",
 }
+
+TIME_SLOTS_BY_HOUR = {
+    0: 'early',
+    6: 'morning',
+    14: 'noon',
+    17: 'jazz',
+    19: 'night',
+}

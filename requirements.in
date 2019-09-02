@@ -1,3 +1,5 @@
 Flask
+flask-redis
 Flask-WTF
 paramiko
+requests
