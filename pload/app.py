@@ -4,6 +4,12 @@ from .views import bp
 from .kv import redis_client
 
 
+def add_security_headers(response):
+    response.headers['Content-Security-Policy'] = "default-src 'self'; frame-ancestors 'self'"
+    response.headers['Referrer-Policy'] = "strict-origin-when-cross-origin"
+    return response
+
+
 def create_app(config=None):
     app = Flask(__name__)
 
@@ -27,6 +33,7 @@ def setup_app(app):
         from werkzeug.debug import DebuggedApplication
         app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
+    app.after_request(add_security_headers)
     redis_client.init_app(app)
 
     app.register_blueprint(bp, url_prefix='')
