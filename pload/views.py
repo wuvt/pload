@@ -4,18 +4,10 @@ from flask import Blueprint, abort, current_app, flash, redirect, \
 from paramiko.client import SSHClient
 from werkzeug.utils import secure_filename
 from .forms import PlaylistForm
+from .lib import sftp_exists
 
 
 bp = Blueprint('pload', __name__)
-
-
-def sftp_exists(sftp, path):
-    try:
-        sftp.stat(path)
-    except FileNotFoundError:
-        return False
-
-    return True
 
 
 @bp.route('/', methods=['GET', 'POST'])

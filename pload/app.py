@@ -1,6 +1,7 @@
 import os
 from flask import Flask
 from .views import bp
+from .kv import redis_client
 
 
 def create_app(config=None):
@@ -26,7 +27,12 @@ def setup_app(app):
         from werkzeug.debug import DebuggedApplication
         app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
+    redis_client.init_app(app)
+
     app.register_blueprint(bp, url_prefix='')
+
+    from .api import bp as api_bp
+    app.register_blueprint(api_bp, url_prefix='/api')
 
 
 app = create_app()

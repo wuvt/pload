@@ -6,17 +6,24 @@
 #
 asn1crypto==0.24.0        # via cryptography
 bcrypt==3.1.7             # via paramiko
+certifi==2019.6.16        # via requests
 cffi==1.12.3              # via bcrypt, cryptography, pynacl
+chardet==3.0.4            # via requests
 click==7.0                # via flask
 cryptography==2.7         # via paramiko
+flask-redis==0.4.0
 flask-wtf==0.14.2
 flask==1.1.1
+idna==2.8                 # via requests
 itsdangerous==1.1.0       # via flask
 jinja2==2.10.1            # via flask
 markupsafe==1.1.1         # via jinja2
 paramiko==2.6.0
 pycparser==2.19           # via cffi
 pynacl==1.3.0             # via paramiko
+redis==3.3.8              # via flask-redis
+requests==2.22.0
 six==1.12.0               # via bcrypt, cryptography, pynacl
+urllib3==1.25.3           # via requests
 werkzeug==0.15.5          # via flask
 wtforms==2.2.1            # via flask-wtf

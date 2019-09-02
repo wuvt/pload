@@ -10,3 +10,9 @@ services:
     - "9070:5000"
     volumes:
     - ../pload-config:/data/config
+    depends_on:
+    - redis
+  redis:
+    image: redis:4-alpine
+    expose:
+     - "6379"
