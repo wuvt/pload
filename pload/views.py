@@ -1,6 +1,6 @@
 import os.path
 from flask import Blueprint, abort, current_app, flash, redirect, \
-        render_template, url_for
+        render_template, request, url_for
 from paramiko.client import SSHClient
 from werkzeug.utils import secure_filename
 from .forms import PlaylistForm
@@ -42,6 +42,11 @@ def upload():
                   "pick another date or time slot.")
         else:
             sftp.putfo(form.playlist.data, dest_path)
+
+            current_app.logger.warning(
+                "{user} uploaded the playlist {filename}".format(
+                    user=request.headers.get('X-Forwarded-User'),
+                    filename=filename))
 
             flash("The playlist has been uploaded.")
             return redirect(url_for('.upload'))
