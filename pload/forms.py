@@ -1,6 +1,7 @@
+import datetime
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms import validators
+from wtforms import validators, ValidationError
 from wtforms.fields import BooleanField, DateField, SelectField
 from wtforms.widgets import FileInput, Select
 from wtforms.widgets.html5 import DateInput
@@ -46,3 +47,7 @@ class PlaylistForm(FlaskForm):
         ],
         widget=BootstrapFileInput())
     overwrite = BooleanField("Overwrite the existing playlist (if one exists)")
+
+    def validate_date(self, field):
+        if field.data <= datetime.datetime.now().date():
+            raise ValidationError("The date must be in the future.")
