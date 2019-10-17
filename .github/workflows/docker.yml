@@ -1,13 +1,9 @@
 name: Build Docker image and push to GitHub Package Registry
-
 on: [push]
 
 jobs:
-
   build:
- 
     runs-on: ubuntu-latest
- 
     steps:
     - uses: actions/checkout@v1
     - name: Build the Docker image
@@ -15,4 +11,4 @@ jobs:
     - name: Authenticate to GitHub Package Registry
       run: docker login docker.pkg.github.com -u wuvt -p ${{ secrets.GITHUB_TOKEN }}
     - name: Push the Docker image to the GitHub Package Registry
-      run: docker push  docker.pkg.github.com/wuvt/containers/pload:${{ github.ref }}
+      run: docker push docker.pkg.github.com/wuvt/containers/pload:${{ github.ref }}
