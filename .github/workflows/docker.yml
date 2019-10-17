@@ -1,0 +1,16 @@
+name: Build Docker image and push to GitHub Package Registry
+
+on: [push]
+
+jobs:
+
+  build:
+ 
+    runs-on: ubuntu-latest
+ 
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag wuvt/containers/pload:latest
+    - name: Push the Docker image to the GitHub Package Registry
+      run: docker push wuvt/containers/pload:latest
