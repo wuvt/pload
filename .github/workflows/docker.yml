@@ -6,9 +6,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag docker.pkg.github.com/wuvt/pload/pload:${{ github.sha }}
-    - name: Authenticate to GitHub Package Registry
-      run: docker login docker.pkg.github.com -u wuvt -p ${{ secrets.GITHUB_TOKEN }}
-    - name: Push the Docker image to the GitHub Package Registry
-      run: docker push docker.pkg.github.com/wuvt/pload/pload:${{ github.sha }}
+    - name: Publish to GitHub Package Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: docker.pkg.github.com/wuvt/pload/pload
+        username: wuvt
+        password: ${{ secrets.GITHUB_TOKEN }}
