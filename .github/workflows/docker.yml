@@ -9,6 +9,7 @@ jobs:
     - name: Publish to GitHub Package Registry
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
-        name: docker.pkg.github.com/wuvt/pload/pload
+        name: wuvt/pload
         username: wuvt
         password: ${{ secrets.GITHUB_TOKEN }}
+        registry: docker.pkg.github.com
