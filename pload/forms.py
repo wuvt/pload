@@ -9,12 +9,12 @@ from wtforms.widgets.html5 import DateInput
 
 class BootstrapWidgetMixin(object):
     def __call__(self, field, **kwargs):
-        existing_class = kwargs.pop('class', '') or kwargs.pop('class_', '')
+        existing_class = kwargs.pop("class", "") or kwargs.pop("class_", "")
         classes = set(existing_class.split())
-        classes.add('form-control')
+        classes.add("form-control")
         if field.errors:
-            classes.add('is-invalid')
-        kwargs['class'] = ' '.join(classes)
+            classes.add("is-invalid")
+        kwargs["class"] = " ".join(classes)
         return super().__call__(field, **kwargs)
 
 
@@ -32,22 +32,25 @@ class BootstrapSelect(BootstrapWidgetMixin, Select):
 
 class PlaylistForm(FlaskForm):
     date = DateField(
-        "Date",
-        validators=[validators.InputRequired()],
-        widget=BootstrapDateInput())
+        "Date", validators=[validators.InputRequired()], widget=BootstrapDateInput()
+    )
     slot = SelectField(
-        "Time Slot",
-        validators=[validators.required()],
-        widget=BootstrapSelect())
+        "Time Slot", validators=[validators.required()], widget=BootstrapSelect()
+    )
     playlist = FileField(
         "Playlist File",
         validators=[
             FileRequired(),
-            FileAllowed(['m3u'], "Only .m3u files may be uploaded."),
+            FileAllowed(["m3u"], "Only .m3u files may be uploaded."),
         ],
-        widget=BootstrapFileInput())
+        widget=BootstrapFileInput(),
+    )
     overwrite = BooleanField("Overwrite the existing playlist (if one exists)")
 
     def validate_date(self, field):
         if field.data <= datetime.datetime.now().date():
             raise ValidationError("The date must be in the future.")
+
+
+class PrerecordedPlaylistForm(PlaylistForm):
+    dj_id = SelectField("DJ", choices=[("1", "Automation")], widget=BootstrapSelect())
