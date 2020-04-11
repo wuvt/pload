@@ -34,7 +34,7 @@ def process_playlist_upload(
     results = []
     index = 0
 
-    db.session.begin_nested()
+    #db.session.begin_nested()
 
     existing_tracks = QueuedTrack.query.filter(
         QueuedTrack.timeslot_start >= timeslot_start,
@@ -71,11 +71,10 @@ def process_playlist_upload(
         track = QueuedTrack(url, timeslot_start, timeslot_end, queue)
         db.session.add(track)
 
-    #if ok:
-    db.session.commit()
-    print("ok? {0}".format(ok))
-    #else:
-    #    db.session.rollback()
+    if ok:
+        db.session.commit()
+    else:
+        db.session.rollback()
 
     return ok, results
 
