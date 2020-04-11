@@ -96,8 +96,8 @@ def index():
     # localize dates and then group by them
     unplayed = defaultdict(list)
     for timeslot_start, timeslot_end, queue in unplayed_tracks:
-        timeslot_start = timeslot_start.astimezone(slot_tz)
-        timeslot_end = timeslot_end.astimezone(slot_tz)
+        timeslot_start = timeslot_start.replace(tzinfo=UTC).astimezone(slot_tz)
+        timeslot_end = timeslot_end.replace(tzinfo=UTC).astimezone(slot_tz)
         unplayed[timeslot_start.date()].append({
             'timeslot_start': timeslot_start,
             'timeslot_end': timeslot_end,
