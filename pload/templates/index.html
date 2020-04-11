@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block nav_index %}<li class="nav-item"><a class="nav-link active" href="{{ url_for('pload.index') }}">Scheduled Playlists</a></li>{% endblock %}
+{% block content %}
+<div class="container">
+<h1>Scheduled Playlists</h1>
+
+{% for date, tracks in unplayed_tracks.items() %}
+<div class="card mt-1">
+    <div class="card-header">
+        {{ date|datetime("%Y-%m-%d", False) }}
+    </div>
+
+    <table class="table">
+        <thead>
+            <th scope="col" width="80%"></th>
+            <th scope="col" width="10%">Start Time</th>
+            <th scope="col" width="10%">End Time</th>
+        </thead>
+        <tbody>
+{% for track in tracks %}
+            <tr>
+                <td>{% if track.queue != "prerecorded" %}Playlist{% else %}Prerecorded Show{% endif %}</td>
+                <td>{{ track.timeslot_start|datetime("%H:%M") }}</td>
+                <td>{{ track.timeslot_end|datetime("%H:%M") }}</td>
+            </tr>
+{% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dateutil.tz import gettz, UTC
 import datetime
 import requests
@@ -34,7 +35,7 @@ def process_playlist_upload(
     results = []
     index = 0
 
-    #db.session.begin_nested()
+    # db.session.begin_nested()
 
     existing_tracks = QueuedTrack.query.filter(
         QueuedTrack.timeslot_start >= timeslot_start,
@@ -79,7 +80,27 @@ def process_playlist_upload(
     return ok, results
 
 
-@bp.route("/", methods=["GET", "POST"])
+@bp.route("/")
+def index():
+    slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
+    unplayed_tracks = (
+        QueuedTrack.query.filter(QueuedTrack.played == False)
+        .group_by(QueuedTrack.timeslot_start)
+        .order_by(QueuedTrack.timeslot_start)
+        .all()
+    )
+
+    # localize dates and then group by them
+    unplayed = defaultdict(list)
+    for track in unplayed_tracks:
+        track.timeslot_start = track.timeslot_start.astimezone(slot_tz)
+        track.timeslot_end = track.timeslot_end.astimezone(slot_tz)
+        unplayed[track.timeslot_start.date()].append(track)
+
+    return render_template("index.html", unplayed_tracks=unplayed)
+
+
+@bp.route("/upload/playlist", methods=["GET", "POST"])
 def upload():
     form = PlaylistForm()
     form.slot.choices = list(current_app.config["TIME_SLOTS"].items())
@@ -152,7 +173,7 @@ overwrite the existing playlist, or pick another date or time slot."""
     return render_template("upload.html", form=form)
 
 
-@bp.route("/prerecorded", methods=["GET", "POST"])
+@bp.route("/upload/prerecorded", methods=["GET", "POST"])
 def upload_prerecorded():
     form = PrerecordedPlaylistForm()
 

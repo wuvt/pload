@@ -11,7 +11,16 @@
 {% block header %}
         <nav class="navbar navbar-expand-lg navbar-light bg-light mb-2">
             <div class="container">
-                <a class="navbar-brand" href="{{ url_for('pload.upload') }}">{{ config.PLOAD_NAME }}</a>
+                <a class="navbar-brand" href="{{ url_for('pload.index') }}">{{ config.PLOAD_NAME }}</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#admin-top-navbar" aria-controls="admin-top-navbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="admin-top-navbar">
+                    <ul class="nav navbar-nav">
+                        {% block nav_index %}<li class="nav-item"><a class="nav-link" href="{{ url_for('pload.index') }}">Scheduled Playlists</a></li>{% endblock %}
+                        {% block nav_upload %}<li class="nav-item"><a class="nav-link" href="{{ url_for('pload.upload') }}">Upload</a></li>{% endblock %}
+                    </ul>
+                </div>
             </div>
         </nav>
 {% endblock %}

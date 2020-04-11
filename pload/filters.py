@@ -7,6 +7,7 @@ def localize_datetime(fromtime):
     return fromtime.replace(tzinfo=UTC).astimezone(slot_tz)
 
 
-def format_datetime(value, format=None):
-    value = localize_datetime(value)
+def format_datetime(value, format=None, localize=True):
+    if localize:
+        value = localize_datetime(value)
     return value.strftime(format or "%Y-%m-%d %H:%M:%S %z")
