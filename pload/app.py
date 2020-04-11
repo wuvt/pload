@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 from .views import bp
-from .kv import redis_client
+from .db import db, init_db
 
 
 def add_security_headers(response):
@@ -38,7 +38,11 @@ def setup_app(app):
         app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
     app.after_request(add_security_headers)
-    redis_client.init_app(app)
+    db.init_app(app)
+
+    if app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite://"):
+        with app.app_context():
+            init_db()
 
     app.register_blueprint(bp, url_prefix="")
 
@@ -48,3 +52,9 @@ def setup_app(app):
 
 
 app = create_app()
+
+
+@app.cli.command()
+def initdb():
+    with app.app_context():
+        init_db()

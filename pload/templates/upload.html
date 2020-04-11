@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container">
-<h2>Upload Playlist</h2>
+<h1>Upload Playlist</h1>
 
-<p>Create a playlist using Clementine on one of the station computers, save it
-as .m3u, and then upload it here.</p>
+<ul class="nav nav-tabs">
+    <li class="nav-item"><a class="nav-link active" href="{{ url_for('pload.upload') }}">Playlist</a></li>
+    <li class="nav-item "><a class="nav-link" href="{{ url_for('pload.upload_prerecorded') }}">Prerecorded Show</a></li>
+</ul>
 
-<p>Note that all files referenced in the playlist must be on the WUVT file
-server; you won't be able to generate playlists on your own computer and use
-them here.</p>
+<p>Upload only .m3u playlists. Every item in the playlist must be a URL that is
+accessible from the WUVT network. Local files on your computer will not work.</p>
 
 <form method="post" class="form-horizontal" role="form" enctype="multipart/form-data">
     {{ form.hidden_tag() }}

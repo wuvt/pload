@@ -1,9 +1,8 @@
-import os.path
-import io
+from dateutil.tz import gettz, UTC
+import datetime
 import requests
 from flask import (
     Blueprint,
-    abort,
     current_app,
     flash,
     redirect,
@@ -11,66 +10,49 @@ from flask import (
     request,
     url_for,
 )
-from paramiko.client import SSHClient
-from werkzeug.utils import secure_filename
+from .db import db
+from .exceptions import PlaylistExistsException, PlaylistValidationException
 from .forms import PlaylistForm, PrerecordedPlaylistForm
-from .lib import sftp_exists
+from .models import QueuedTrack
+from .view_utils import validate_url
 
 
 bp = Blueprint("pload", __name__)
 
 
-class PlaylistExistsException(Exception):
-    pass
-
-
 def process_playlist_upload(
-    filename, upload_fo, overwrite=False, line_wrapper=None, dest_prefix=""
+    timeslot_start,
+    timeslot_end,
+    playlist_fo,
+    queue=None,
+    line_wrapper=None,
+    overwrite=False,
+    skip_validate=False,
 ):
-    if len(current_app.config.get("SFTP_DEST_PATH", "")) > 0:
-        dest_path = os.path.join(
-            current_app.config["SFTP_DEST_PATH"], dest_prefix, filename
-        )
+    existing_tracks = QueuedTrack.query.filter(
+        QueuedTrack.timeslot_start >= timeslot_start,
+        QueuedTrack.timeslot_end <= timeslot_end,
+        QueuedTrack.queue == queue,
+    )
+    if existing_tracks.count() > 0 and not overwrite:
+        raise PlaylistExistsException()
+    elif overwrite:
+        for track in existing_tracks.all():
+            db.session.delete(track)
+        db.session.commit()
 
-        client = SSHClient()
-        client.load_system_host_keys(current_app.config["SFTP_KNOWN_HOSTS"])
-        client.connect(
-            current_app.config["SFTP_SERVER"],
-            port=current_app.config.get("SFTP_PORT", 22),
-            username=current_app.config.get("SFTP_USERNAME"),
-            key_filename=current_app.config["SFTP_KEY_FILE"],
-        )
-        sftp = client.open_sftp()
+    for line in playlist_fo:
+        url = line.strip().decode("utf-8")
+        if url.startswith("#"):
+            continue
+        if not skip_validate and not validate_url(url):
+            raise PlaylistValidationException()
+        if line_wrapper is not None:
+            url = line_wrapper(url)
+        track = QueuedTrack(url, timeslot_start, timeslot_end, queue)
+        db.session.add(track)
 
-        if not overwrite and sftp_exists(sftp, dest_path):
-            raise PlaylistExistsException()
-    else:
-        dest_path = os.path.join(current_app.config["DEST_PATH"], dest_prefix, filename)
-        sftp = None
-
-        if not overwrite and os.path.exists(dest_path):
-            raise PlaylistExistsException()
-
-    if line_wrapper is not None:
-        if sftp is None:
-            playlist_fo = open(dest_path)
-        else:
-            # create an in-memory playlist buffer
-            playlist_fo = io.StringIO()
-
-        for line in upload_fo:
-            playlist_fo.write(line_wrapper(line.strip().decode("utf-8")) + "\n")
-
-        if sftp is not None:
-            playlist_fo.seek(0)
-            sftp.putfo(playlist_fo, dest_path)
-
-        playlist_fo.close()
-    else:
-        if sftp is not None:
-            sftp.putfo(upload_fo, dest_path)
-        else:
-            upload_fo.save(dest_path)
+    db.session.commit()
 
 
 @bp.route("/", methods=["GET", "POST"])
@@ -79,18 +61,44 @@ def upload():
     form.slot.choices = list(current_app.config["TIME_SLOTS"].items())
 
     if form.validate_on_submit():
-        filename = secure_filename(
-            "{0}-{1}.m3u".format(form.date.data.strftime("%Y%m%d"), form.slot.data)
+        slots = sorted(
+            current_app.config["TIME_SLOTS_BY_HOUR"].items(), key=lambda x: x[0]
+        )
+        slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
+
+        timeslot_start = datetime.datetime(
+            form.date.data.year,
+            form.date.data.month,
+            form.date.data.day,
+            tzinfo=slot_tz,
+        )
+        timeslot_end = datetime.datetime(
+            form.date.data.year,
+            form.date.data.month,
+            form.date.data.day,
+            tzinfo=slot_tz,
         )
 
-        # in some cases, secure_filename can return an empty string, so abort
-        # if that happened
-        if len(filename) <= 0:
-            abort(400)
+        for i in range(len(slots)):
+            if slots[i][1] == form.slot.data:
+                timeslot_start = timeslot_start.replace(hour=slots[i][0])
+                if i + 1 < len(slots):
+                    timeslot_end = timeslot_start.replace(hour=slots[i + 1][0])
+                else:
+                    timeslot_end = timeslot_start.replace(hour=slots[0][0])
+                    timeslot_end += datetime.timedelta(days=1)
+                break
+
+        # convert times to UTC for querying the database
+        timeslot_start = timeslot_start.astimezone(UTC)
+        timeslot_end = timeslot_end.astimezone(UTC)
 
         try:
             process_playlist_upload(
-                filename, form.playlist.data, overwrite=form.overwrite.data
+                timeslot_start,
+                timeslot_end,
+                form.playlist.data,
+                overwrite=form.overwrite.data,
             )
         except PlaylistExistsException:
             flash(
@@ -98,10 +106,14 @@ def upload():
 A playlist already exists for that date and time slot. You'll need to either
 overwrite the existing playlist, or pick another date or time slot."""
             )
+        except PlaylistValidationException:
+            flash("The playlist you uploaded failed to validate.")
         else:
             current_app.logger.warning(
-                "{user} uploaded the playlist {filename}".format(
-                    user=request.headers.get("X-Forwarded-User"), filename=filename
+                "{user} uploaded a playlist that covers {start} until {end}".format(
+                    user=request.headers.get("X-Forwarded-User"),
+                    start=timeslot_start,
+                    end=timeslot_end,
                 )
             )
 
@@ -114,8 +126,6 @@ overwrite the existing playlist, or pick another date or time slot."""
 @bp.route("/prerecorded", methods=["GET", "POST"])
 def upload_prerecorded():
     form = PrerecordedPlaylistForm()
-    # FIXME: we need more slots for prerecorded stuff
-    form.slot.choices = list(current_app.config["TIME_SLOTS"].items())
 
     # get list of DJs from Trackman and add
     r = requests.get(
@@ -127,14 +137,28 @@ def upload_prerecorded():
         form.dj_id.choices += [(str(dj["id"]), dj["airname"]) for dj in djs]
 
     if form.validate_on_submit():
-        filename = secure_filename(
-            "{0}-{1}.m3u".format(form.date.data.strftime("%Y%m%d"), form.slot.data)
+        slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
+
+        timeslot_start = datetime.datetime(
+            form.date.data.year,
+            form.date.data.month,
+            form.date.data.day,
+            form.time_start.data.hour,
+            form.time_start.data.minute,
+            tzinfo=slot_tz,
+        )
+        timeslot_end = datetime.datetime(
+            form.date.data.year,
+            form.date.data.month,
+            form.date.data.day,
+            form.time_end.data.hour,
+            form.time_end.data.minute,
+            tzinfo=slot_tz,
         )
 
-        # in some cases, secure_filename can return an empty string, so abort
-        # if that happened
-        if len(filename) <= 0:
-            abort(400)
+        # convert times to UTC for querying the database
+        timeslot_start = timeslot_start.astimezone(UTC)
+        timeslot_end = timeslot_end.astimezone(UTC)
 
         def process_line(url):
             return "annotate:trackman_dj_id={dj_id:d}:{url}".format(
@@ -143,11 +167,12 @@ def upload_prerecorded():
 
         try:
             process_playlist_upload(
-                filename,
+                timeslot_start,
+                timeslot_end,
                 form.playlist.data,
+                queue="prerecorded",
+                line_wrapper=process_line,
                 overwrite=form.overwrite.data,
-                wrapper=process_line,
-                dest_prefix="prerercorded",
             )
         except PlaylistExistsException:
             flash(
@@ -155,10 +180,14 @@ def upload_prerecorded():
 A playlist already exists for that date and time slot. You'll need to either
 overwrite the existing playlist, or pick another date or time slot."""
             )
+        except PlaylistValidationException:
+            flash("The playlist you uploaded failed to validate.")
         else:
             current_app.logger.warning(
-                "{user} uploaded the playlist {filename}".format(
-                    user=request.headers.get("X-Forwarded-User"), filename=filename
+                "{user} uploaded a prerecorded playlist that covers {start} until {end}".format(
+                    user=request.headers.get("X-Forwarded-User"),
+                    start=timeslot_start,
+                    end=timeslot_end,
                 )
             )
 

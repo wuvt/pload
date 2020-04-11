@@ -1,3 +1,6 @@
+import requests
+import requests.exceptions
+from dateutil.tz import gettz
 from flask import current_app, make_response, request
 from functools import wraps
 
@@ -23,3 +26,18 @@ def require_auth(f):
             return resp
 
     return require_auth_wrapper
+
+
+def get_slot_tz():
+    return gettz(current_app.config["TIME_SLOT_TZ"])
+
+
+def validate_url(url):
+    if current_app.config["TRACK_VALIDATE_CHECK_EXISTS"]:
+        try:
+            r = requests.get(url)
+            r.raise_for_status()
+        except requests.exceptions.RequestException:
+            return False
+
+    return True
