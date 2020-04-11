@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+{% if ok %}
+<div class="alert alert-success" role="alert">
+    The playlist has been uploaded.
+</div>
+{% else %}
+<div class="alert alert-danger" role="alert">
+    The playlist failed to upload. Check the table below for details.
+</div>
+{% endif %}
+
+<h1>Upload Report</h1>
+
+<ul class="nav nav-tabs">
+    <li class="nav-item"><a class="nav-link{% if not prerecorded %} active{% endif %}" href="{{ url_for('pload.upload') }}">Playlist</a></li>
+    <li class="nav-item "><a class="nav-link{% if prerecorded %} active{% endif %}" href="{{ url_for('pload.upload_prerecorded') }}">Prerecorded Show</a></li>
+</ul>
+
+<div class="card mt-1">
+    <div class="card-body">
+        <h5 class="card-title">{% if not prerecorded %}Playlist{% else %}Prerecorded Show{% endif %}</h5>
+        <p class="card-text">Scheduled to play between {{ timeslot_start|datetime }} and {{ timeslot_end|datetime }}.</p>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">URL</th>
+                <th scope="col">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+{% for item in results %}
+            <tr>
+                <td>{{ item.index }}</td>
+                <td><a href="{{ item.url }}">{{ item.url|wordwrap }}</a></td>
+                <td>{{ item.status }}</td>
+            </tr>
+{% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+{% endblock %}

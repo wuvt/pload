@@ -29,6 +29,13 @@ def process_playlist_upload(
     overwrite=False,
     skip_validate=False,
 ):
+    # if a track fails, ok will be set to False and no future db.session.commit
+    ok = True
+    results = []
+    index = 0
+
+    db.session.begin_nested()
+
     existing_tracks = QueuedTrack.query.filter(
         QueuedTrack.timeslot_start >= timeslot_start,
         QueuedTrack.timeslot_end <= timeslot_end,
@@ -39,20 +46,37 @@ def process_playlist_upload(
     elif overwrite:
         for track in existing_tracks.all():
             db.session.delete(track)
-        db.session.commit()
 
     for line in playlist_fo:
         url = line.strip().decode("utf-8")
         if url.startswith("#"):
             continue
+
+        index += 1
+
         if not skip_validate and not validate_url(url):
-            raise PlaylistValidationException()
+            ok = False
+            results.append(
+                {"index": index, "url": url, "status": "Error",}
+            )
+            continue
+        else:
+            results.append(
+                {"index": index, "url": url, "status": "OK",}
+            )
+
         if line_wrapper is not None:
             url = line_wrapper(url)
+
         track = QueuedTrack(url, timeslot_start, timeslot_end, queue)
         db.session.add(track)
 
-    db.session.commit()
+    if ok:
+        db.session.commit()
+    else:
+        db.session.rollback()
+
+    return ok, results
 
 
 @bp.route("/", methods=["GET", "POST"])
@@ -94,7 +118,7 @@ def upload():
         timeslot_end = timeslot_end.astimezone(UTC)
 
         try:
-            process_playlist_upload(
+            ok, results = process_playlist_upload(
                 timeslot_start,
                 timeslot_end,
                 form.playlist.data,
@@ -106,19 +130,24 @@ def upload():
 A playlist already exists for that date and time slot. You'll need to either
 overwrite the existing playlist, or pick another date or time slot."""
             )
-        except PlaylistValidationException:
-            flash("The playlist you uploaded failed to validate.")
         else:
-            current_app.logger.warning(
-                "{user} uploaded a playlist that covers {start} until {end}".format(
-                    user=request.headers.get("X-Forwarded-User"),
-                    start=timeslot_start,
-                    end=timeslot_end,
+            if ok:
+                current_app.logger.warning(
+                    "{user} uploaded a playlist that covers {start} until {end}".format(
+                        user=request.headers.get("X-Forwarded-User"),
+                        start=timeslot_start,
+                        end=timeslot_end,
+                    )
                 )
-            )
 
-            flash("The playlist has been uploaded.")
-            return redirect(url_for(".upload"))
+            return render_template(
+                "upload_report.html",
+                prerecorded=False,
+                timeslot_start=timeslot_start,
+                timeslot_end=timeslot_end,
+                ok=ok,
+                results=results,
+            )
 
     return render_template("upload.html", form=form)
 
@@ -166,7 +195,7 @@ def upload_prerecorded():
             )
 
         try:
-            process_playlist_upload(
+            ok, results = process_playlist_upload(
                 timeslot_start,
                 timeslot_end,
                 form.playlist.data,
@@ -180,18 +209,23 @@ def upload_prerecorded():
 A playlist already exists for that date and time slot. You'll need to either
 overwrite the existing playlist, or pick another date or time slot."""
             )
-        except PlaylistValidationException:
-            flash("The playlist you uploaded failed to validate.")
         else:
-            current_app.logger.warning(
-                "{user} uploaded a prerecorded playlist that covers {start} until {end}".format(
-                    user=request.headers.get("X-Forwarded-User"),
-                    start=timeslot_start,
-                    end=timeslot_end,
+            if ok:
+                current_app.logger.warning(
+                    "{user} uploaded a prerecorded playlist that covers {start} until {end}".format(
+                        user=request.headers.get("X-Forwarded-User"),
+                        start=timeslot_start,
+                        end=timeslot_end,
+                    )
                 )
-            )
 
-            flash("The playlist has been uploaded.")
-            return redirect(url_for(".upload_prerecorded"))
+            return render_template(
+                "upload_report.html",
+                prerecorded=True,
+                timeslot_start=timeslot_start,
+                timeslot_end=timeslot_end,
+                ok=ok,
+                results=results,
+            )
 
     return render_template("upload_prerecorded.html", form=form)

@@ -37,6 +37,12 @@ def setup_app(app):
 
         app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
+    from .filters import format_datetime
+
+    app.jinja_env.filters.update(
+        {"datetime": format_datetime,}
+    )
+
     app.after_request(add_security_headers)
     db.init_app(app)
 
