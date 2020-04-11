@@ -20,8 +20,8 @@
 {% for track in tracks %}
             <tr>
                 <td>{% if track.queue != "prerecorded" %}Playlist{% else %}Prerecorded Show{% endif %}</td>
-                <td>{{ track.timeslot_start|datetime("%H:%M") }}</td>
-                <td>{{ track.timeslot_end|datetime("%H:%M") }}</td>
+                <td>{{ track.timeslot_start|datetime("%H:%M", False) }}</td>
+                <td>{{ track.timeslot_end|datetime("%H:%M", False) }}</td>
             </tr>
 {% endfor %}
         </tbody>
