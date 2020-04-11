@@ -71,10 +71,11 @@ def process_playlist_upload(
         track = QueuedTrack(url, timeslot_start, timeslot_end, queue)
         db.session.add(track)
 
-    if ok:
-        db.session.commit()
-    else:
-        db.session.rollback()
+    #if ok:
+    db.session.commit()
+    print("ok? {0}".format(ok))
+    #else:
+    #    db.session.rollback()
 
     return ok, results
 
