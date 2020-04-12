@@ -90,7 +90,7 @@ def index():
             QueuedTrack.queue,
             db.func.count(QueuedTrack.id),
         )
-        .filter(QueuedTrack.played == False)
+        .filter(QueuedTrack.timeslot_end >= datetime.datetime.utcnow())
         .group_by(
             QueuedTrack.timeslot_start, QueuedTrack.timeslot_end, QueuedTrack.queue
         )
