@@ -226,6 +226,9 @@ def upload_prerecorded():
             tzinfo=slot_tz,
         )
 
+        if timeslot_end <= timeslot_start:
+            timeslot_end += datetime.timedelta(days=1)
+
         # convert times to UTC for querying the database
         timeslot_start = timeslot_start.astimezone(UTC)
         timeslot_end = timeslot_end.astimezone(UTC)
