@@ -46,7 +46,7 @@ class PlaylistForm(FlaskForm):
         "Playlist File",
         validators=[
             FileRequired(),
-            FileAllowed(["m3u"], "Only .m3u files may be uploaded."),
+            FileAllowed(["m3u", "m3u8"], "Only .m3u and .m3u8 files may be uploaded."),
         ],
         widget=BootstrapFileInput(),
     )
