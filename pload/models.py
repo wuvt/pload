@@ -8,9 +8,11 @@ class QueuedTrack(db.Model):
     timeslot_end = db.Column(db.DateTime, nullable=False)
     queue = db.Column(db.Unicode(255), nullable=True)
     played = db.Column(db.Boolean, default=False, nullable=False)
+    dj_id = db.Column(db.Integer)
 
-    def __init__(self, url, timeslot_start, timeslot_end, queue=None):
+    def __init__(self, url, timeslot_start, timeslot_end, queue=None, dj_id=None):
         self.url = url
         self.timeslot_start = timeslot_start
         self.timeslot_end = timeslot_end
         self.queue = queue
+        self.dj_id = dj_id

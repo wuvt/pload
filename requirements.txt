@@ -4,6 +4,7 @@
 #
 #    pip-compile
 #
+alembic==1.4.2            # via flask-migrate
 asn1crypto==0.24.0        # via cryptography
 bcrypt==3.1.7             # via paramiko
 certifi==2019.6.16        # via requests
@@ -11,21 +12,24 @@ cffi==1.12.3              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via requests
 click==7.0                # via flask
 cryptography==2.7         # via paramiko
-flask-sqlalchemy==2.4.1   # via -r requirements.in
+flask-migrate==2.5.3      # via -r requirements.in
+flask-sqlalchemy==2.4.1   # via -r requirements.in, flask-migrate
 flask-wtf==0.14.2         # via -r requirements.in
-flask==1.1.1              # via -r requirements.in, flask-sqlalchemy, flask-wtf
+flask==1.1.1              # via -r requirements.in, flask-migrate, flask-sqlalchemy, flask-wtf
 idna==2.8                 # via requests
 itsdangerous==1.1.0       # via flask
 jinja2==2.10.1            # via flask
-markupsafe==1.1.1         # via jinja2
+mako==1.1.2               # via alembic
+markupsafe==1.1.1         # via jinja2, mako
 paramiko==2.6.0           # via -r requirements.in
 psycopg2==2.8.5           # via -r requirements.in
 pycparser==2.19           # via cffi
 pynacl==1.3.0             # via paramiko
-python-dateutil==2.8.1    # via -r requirements.in
+python-dateutil==2.8.1    # via -r requirements.in, alembic
+python-editor==1.0.4      # via alembic
 requests==2.22.0          # via -r requirements.in
 six==1.12.0               # via bcrypt, cryptography, pynacl, python-dateutil
-sqlalchemy==1.3.16        # via flask-sqlalchemy
+sqlalchemy==1.3.16        # via alembic, flask-sqlalchemy
 urllib3==1.25.3           # via requests
 werkzeug==0.15.5          # via flask
 wtforms==2.2.1            # via flask-wtf

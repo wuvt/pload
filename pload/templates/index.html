@@ -12,7 +12,8 @@
 
     <table class="table">
         <thead>
-            <th scope="col" width="70%"></th>
+            <th scope="col" width="30%"></th>
+            <th scope="col" width="40%">DJ</th>
             <th scope="col" width="10%">Tracks</th>
             <th scope="col" width="10%">Start Time</th>
             <th scope="col" width="10%">End Time</th>
@@ -21,6 +22,7 @@
 {% for track in tracks %}
             <tr>
                 <td>{% if track.queue != "prerecorded" %}Playlist{% else %}Prerecorded Show{% endif %}</td>
+                <td>{{ track.dj }}</td>
                 <td>{{ track.track_count }}</td>
                 <td>{{ track.timeslot_start|datetime("%H:%M", False) }}</td>
                 <td>{{ track.timeslot_end|datetime("%H:%M", False) }}</td>

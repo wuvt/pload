@@ -33,7 +33,13 @@ def next_track():
         next_track.played = True
         db.session.commit()
 
-        resp = make_response("{0}\n".format(next_track.url))
+        url = next_track.url
+        if next_track.dj_id is not None and next_track.dj_id > 1:
+            url = "annotate:trackman_dj_id={dj_id:d}:{url}".format(
+                dj_id=next_track.dj_id, url=url
+            )
+
+        resp = make_response("{0}\n".format(url))
         resp.headers["Content-Type"] = output_content_type
         return resp
 

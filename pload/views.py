@@ -1,7 +1,6 @@
 from collections import defaultdict
 from dateutil.tz import gettz, UTC
 import datetime
-import requests
 from flask import (
     Blueprint,
     current_app,
@@ -15,7 +14,7 @@ from .db import db
 from .exceptions import PlaylistExistsException, PlaylistValidationException
 from .forms import PlaylistForm, PrerecordedPlaylistForm
 from .models import QueuedTrack
-from .view_utils import validate_url
+from .view_utils import validate_url, get_dj_list
 
 
 bp = Blueprint("pload", __name__)
@@ -29,8 +28,10 @@ def process_playlist_upload(
     line_wrapper=None,
     overwrite=False,
     skip_validate=False,
+    dj_id=None,
 ):
-    # if a track fails, ok will be set to False and no future db.session.commit
+    # if a track fails, ok will be set to False and we will roll back all
+    # changes rather than committing
     ok = True
     results = []
     index = 0
@@ -69,7 +70,7 @@ def process_playlist_upload(
         if line_wrapper is not None:
             url = line_wrapper(url)
 
-        track = QueuedTrack(url, timeslot_start, timeslot_end, queue)
+        track = QueuedTrack(url, timeslot_start, timeslot_end, queue, dj_id)
         db.session.add(track)
 
     if ok:
@@ -82,17 +83,25 @@ def process_playlist_upload(
 
 @bp.route("/")
 def index():
+    djs = get_dj_list()
+    dj_map = {int(dj["id"]): dj["airname"] for dj in djs}
+    dj_map[1] = "Automation"
+
     slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
     unplayed_tracks = (
         QueuedTrack.query.with_entities(
             QueuedTrack.timeslot_start,
             QueuedTrack.timeslot_end,
             QueuedTrack.queue,
+            QueuedTrack.dj_id,
             db.func.count(QueuedTrack.id),
         )
         .filter(QueuedTrack.timeslot_end >= datetime.datetime.utcnow())
         .group_by(
-            QueuedTrack.timeslot_start, QueuedTrack.timeslot_end, QueuedTrack.queue
+            QueuedTrack.timeslot_start,
+            QueuedTrack.timeslot_end,
+            QueuedTrack.queue,
+            QueuedTrack.dj_id,
         )
         .order_by(QueuedTrack.timeslot_start)
         .all()
@@ -100,7 +109,10 @@ def index():
 
     # localize dates and then group by them
     unplayed = defaultdict(list)
-    for timeslot_start, timeslot_end, queue, track_count in unplayed_tracks:
+    for timeslot_start, timeslot_end, queue, dj_id, track_count in unplayed_tracks:
+        if dj_id is None:
+            dj_id = 1
+
         timeslot_start = timeslot_start.replace(tzinfo=UTC).astimezone(slot_tz)
         timeslot_end = timeslot_end.replace(tzinfo=UTC).astimezone(slot_tz)
         unplayed[timeslot_start.date()].append(
@@ -109,6 +121,8 @@ def index():
                 "timeslot_end": timeslot_end,
                 "queue": queue,
                 "track_count": track_count,
+                "dj_id": dj_id,
+                "dj": dj_map.get(dj_id, "[DJ #{0}]".format(dj_id)),
             }
         )
 
@@ -193,18 +207,8 @@ def upload_prerecorded():
     form = PrerecordedPlaylistForm()
 
     # get list of DJs from Trackman and add
-    try:
-        r = requests.get(
-            "{0}/api/playlists/dj".format(
-                current_app.config["TRACKMAN_URL"].rstrip("/")
-            )
-        )
-        if r.status_code == 200:
-            data = r.json()
-            djs = data.get("djs", [])
-            form.dj_id.choices += [(str(dj["id"]), dj["airname"]) for dj in djs]
-    except requests.exceptions.RequestException as e:
-        current_app.logger.warning("Failed to load DJ list: {0}".format(e))
+    djs = get_dj_list()
+    form.dj_id.choices += [(str(dj["id"]), dj["airname"]) for dj in djs]
 
     if form.validate_on_submit():
         slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
@@ -233,19 +237,14 @@ def upload_prerecorded():
         timeslot_start = timeslot_start.astimezone(UTC)
         timeslot_end = timeslot_end.astimezone(UTC)
 
-        def process_line(url):
-            return "annotate:trackman_dj_id={dj_id:d}:{url}".format(
-                dj_id=int(form.dj_id.data), url=url
-            )
-
         try:
             ok, results = process_playlist_upload(
                 timeslot_start,
                 timeslot_end,
                 form.playlist.data,
                 queue="prerecorded",
-                line_wrapper=process_line,
                 overwrite=form.overwrite.data,
+                dj_id=int(form.dj_id.data),
             )
         except PlaylistExistsException:
             flash(

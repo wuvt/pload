@@ -1,4 +1,5 @@
 Flask
+Flask-Migrate
 Flask-SQLALchemy
 Flask-WTF
 paramiko

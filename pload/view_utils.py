@@ -41,3 +41,18 @@ def validate_url(url):
             return False
 
     return True
+
+
+def get_dj_list():
+    try:
+        r = requests.get(
+            "{0}/api/playlists/dj".format(
+                current_app.config["TRACKMAN_URL"].rstrip("/")
+            )
+        )
+        r.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        current_app.logger.warning("Failed to load DJ list: {0}".format(e))
+        return []
+    else:
+        return r.json().get("djs", [])

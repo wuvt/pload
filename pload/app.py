@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 from .views import bp
-from .db import db, init_db
+from .db import db, init_db, migrate
 
 
 def add_security_headers(response):
@@ -43,6 +43,7 @@ def setup_app(app):
 
     app.after_request(add_security_headers)
     db.init_app(app)
+    migrate.init_app(app, db)
 
     if app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite://"):
         with app.app_context():
