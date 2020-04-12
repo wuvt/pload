@@ -84,11 +84,11 @@ def process_playlist_upload(
 def index():
     slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
     unplayed_tracks = (
-        QueuedTrack.query.options(
-            db.load_only("timeslot_start", "timeslot_end", "queue")
-        )
-        .with_entities(
-            QueuedTrack.timeslot_start, QueuedTrack.timeslot_end, QueuedTrack.queue
+        QueuedTrack.query.with_entities(
+            QueuedTrack.timeslot_start,
+            QueuedTrack.timeslot_end,
+            QueuedTrack.queue,
+            db.func.count(QueuedTrack.id),
         )
         .filter(QueuedTrack.played == False)
         .group_by(
@@ -100,7 +100,7 @@ def index():
 
     # localize dates and then group by them
     unplayed = defaultdict(list)
-    for timeslot_start, timeslot_end, queue in unplayed_tracks:
+    for timeslot_start, timeslot_end, queue, track_count in unplayed_tracks:
         timeslot_start = timeslot_start.replace(tzinfo=UTC).astimezone(slot_tz)
         timeslot_end = timeslot_end.replace(tzinfo=UTC).astimezone(slot_tz)
         unplayed[timeslot_start.date()].append(
@@ -108,6 +108,7 @@ def index():
                 "timeslot_start": timeslot_start,
                 "timeslot_end": timeslot_end,
                 "queue": queue,
+                "track_count": track_count,
             }
         )
 
