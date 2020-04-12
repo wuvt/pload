@@ -39,9 +39,7 @@ def setup_app(app):
 
     from .filters import format_datetime
 
-    app.jinja_env.filters.update(
-        {"datetime": format_datetime}
-    )
+    app.jinja_env.filters.update({"datetime": format_datetime})
 
     app.after_request(add_security_headers)
     db.init_app(app)

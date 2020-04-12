@@ -84,11 +84,16 @@ def process_playlist_upload(
 def index():
     slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
     unplayed_tracks = (
-        QueuedTrack.query
-        .options(db.load_only('timeslot_start', 'timeslot_end', 'queue'))
-        .with_entities(QueuedTrack.timeslot_start, QueuedTrack.timeslot_end, QueuedTrack.queue)
+        QueuedTrack.query.options(
+            db.load_only("timeslot_start", "timeslot_end", "queue")
+        )
+        .with_entities(
+            QueuedTrack.timeslot_start, QueuedTrack.timeslot_end, QueuedTrack.queue
+        )
         .filter(QueuedTrack.played == False)
-        .group_by(QueuedTrack.timeslot_start, QueuedTrack.timeslot_end, QueuedTrack.queue)
+        .group_by(
+            QueuedTrack.timeslot_start, QueuedTrack.timeslot_end, QueuedTrack.queue
+        )
         .order_by(QueuedTrack.timeslot_start)
         .all()
     )
@@ -98,11 +103,13 @@ def index():
     for timeslot_start, timeslot_end, queue in unplayed_tracks:
         timeslot_start = timeslot_start.replace(tzinfo=UTC).astimezone(slot_tz)
         timeslot_end = timeslot_end.replace(tzinfo=UTC).astimezone(slot_tz)
-        unplayed[timeslot_start.date()].append({
-            'timeslot_start': timeslot_start,
-            'timeslot_end': timeslot_end,
-            'queue': queue,
-        })
+        unplayed[timeslot_start.date()].append(
+            {
+                "timeslot_start": timeslot_start,
+                "timeslot_end": timeslot_end,
+                "queue": queue,
+            }
+        )
 
     return render_template("index.html", unplayed_tracks=unplayed)
 
@@ -185,13 +192,18 @@ def upload_prerecorded():
     form = PrerecordedPlaylistForm()
 
     # get list of DJs from Trackman and add
-    r = requests.get(
-        "{0}/api/playlists/dj".format(current_app.config["TRACKMAN_URL"].rstrip("/"))
-    )
-    if r.status_code == 200:
-        data = r.json()
-        djs = data.get("djs", [])
-        form.dj_id.choices += [(str(dj["id"]), dj["airname"]) for dj in djs]
+    try:
+        r = requests.get(
+            "{0}/api/playlists/dj".format(
+                current_app.config["TRACKMAN_URL"].rstrip("/")
+            )
+        )
+        if r.status_code == 200:
+            data = r.json()
+            djs = data.get("djs", [])
+            form.dj_id.choices += [(str(dj["id"]), dj["airname"]) for dj in djs]
+    except requests.exceptions.RequestException as e:
+        current_app.logger.warning("Failed to load DJ list: {0}".format(e))
 
     if form.validate_on_submit():
         slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
