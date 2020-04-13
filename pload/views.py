@@ -14,7 +14,7 @@ from .db import db
 from .exceptions import PlaylistExistsException, PlaylistValidationException
 from .forms import PlaylistForm, PrerecordedPlaylistForm
 from .models import QueuedTrack
-from .view_utils import validate_url, get_dj_list
+from .view_utils import process_url, get_dj_list
 
 
 bp = Blueprint("pload", __name__)
@@ -56,7 +56,9 @@ def process_playlist_upload(
 
         index += 1
 
-        if not skip_validate and not validate_url(url):
+        try:
+            url = process_url(url, skip_validate)
+        except PlaylistValidationException:
             ok = False
             results.append(
                 {"index": index, "url": url, "status": "Error",}

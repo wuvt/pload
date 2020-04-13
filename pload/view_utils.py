@@ -1,8 +1,12 @@
+import re
 import requests
 import requests.exceptions
 from dateutil.tz import gettz
 from flask import current_app, make_response, request
 from functools import wraps
+
+
+annotate_split_re = re.compile(r":(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")
 
 
 def require_auth(f):
@@ -41,6 +45,27 @@ def validate_url(url):
             return False
 
     return True
+
+
+def process_url(url, skip_validate=False):
+    if url.startswith("annotate:"):
+        frags = annotate_split_re.split(url, 2)
+        frags[2] = process_url(url, skip_validate)
+        return ":".join(frags)
+    elif url.startswith("ffmpeg:") or url.startswith("replay_gain:"):
+        frags = url.split(":", 1)
+        frags[1] = process_url(url, skip_validate)
+        return ":".join(frags)
+    elif url[0:7] == "http://" or url[0:8] == "https://":
+        url = requests.utils.requote_uri(url)
+        if not skip_validate and not validate_url(url):
+            raise PlaylistValidationException()
+        return url
+    else:
+        if not skip_validate:
+            raise PlaylistValidationException()
+        else:
+            return url
 
 
 def get_dj_list():

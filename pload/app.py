@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 from flask import Flask
 from .views import bp
 from .db import db, init_db, migrate
@@ -39,7 +40,9 @@ def setup_app(app):
 
     from .filters import format_datetime
 
-    app.jinja_env.filters.update({"datetime": format_datetime})
+    app.jinja_env.filters.update(
+        {"datetime": format_datetime, "urldecode": urllib.parse.unquote}
+    )
 
     app.after_request(add_security_headers)
     db.init_app(app)
