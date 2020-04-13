@@ -5,10 +5,8 @@ from flask import (
     Blueprint,
     current_app,
     flash,
-    redirect,
     render_template,
     request,
-    url_for,
 )
 from .db import db
 from .exceptions import PlaylistExistsException, PlaylistValidationException
