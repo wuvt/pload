@@ -1,0 +1,11 @@
+{% set return_url = url_for('pload.index') %}
+{% extends "playlist_editor.html" %}
+{% block nav_index %}<li class="nav-item"><a class="nav-link active" href="{{ url_for('pload.index') }}">Scheduled Playlists</a></li>{% endblock %}
+{% block js %}
+{{ super() }}
+<script nonce="{{ script_nonce }}">
+var playlistEditor = new PlaylistEditor("{{ url_for('pload.index', _external=True)[:-1] }}");
+playlistEditor.init();
+playlistEditor.loadPlaylist({{ tracks|tojson }});
+</script>
+{% endblock %}

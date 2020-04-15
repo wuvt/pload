@@ -38,6 +38,9 @@ def get_slot_tz():
 
 
 def validate_url(url):
+    if url[0:7] != "http://" and url[0:8] != "https://":
+        return False
+
     if current_app.config["TRACK_VALIDATE_CHECK_EXISTS"]:
         try:
             r = requests.get(url)

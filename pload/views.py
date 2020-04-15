@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dateutil.tz import gettz, UTC
 import datetime
+import dateutil.parser
 from flask import (
     Blueprint,
     current_app,
@@ -113,8 +114,6 @@ def index():
         if dj_id is None:
             dj_id = 1
 
-        timeslot_start = timeslot_start.replace(tzinfo=UTC).astimezone(slot_tz)
-        timeslot_end = timeslot_end.replace(tzinfo=UTC).astimezone(slot_tz)
         unplayed[timeslot_start.date()].append(
             {
                 "timeslot_start": timeslot_start,
@@ -272,3 +271,31 @@ overwrite the existing playlist, or pick another date or time slot."""
             )
 
     return render_template("upload_prerecorded.html", form=form)
+
+
+@bp.route("/playlists/edit")
+def edit_playlist():
+    slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
+    timeslot_start = dateutil.parser.parse(request.args["timeslot_start"]).astimezone(
+        UTC
+    )
+    timeslot_end = dateutil.parser.parse(request.args["timeslot_end"]).astimezone(UTC)
+    queue = request.args.get("queue")
+
+    tracks = (
+        QueuedTrack.query.filter(
+            QueuedTrack.timeslot_start >= timeslot_start,
+            QueuedTrack.timeslot_end <= timeslot_end,
+            QueuedTrack.queue == queue,
+        )
+        .order_by(QueuedTrack.id)
+        .all()
+    )
+
+    return render_template(
+        "edit_playlist.html",
+        prerecorded=queue == "prerecorded",
+        timeslot_start=timeslot_start,
+        timeslot_end=timeslot_end,
+        tracks=[t.serialize() for t in tracks],
+    )

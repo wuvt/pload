@@ -1,0 +1,213 @@
+function PlaylistEditor(baseUrl) {
+    this.baseUrl = baseUrl;
+}
+
+PlaylistEditor.prototype.init = function() {
+    this.initPlaylist();
+};
+
+PlaylistEditor.prototype.initPlaylist = function() {
+    this.playlist = [];
+    this.draggedPlaylistId = null;
+    this.draggedPlaylistDropId = null;
+
+    $('#playlist').on('dragenter', {'instance': this}, function(ev) {
+        var inst = ev.data.instance;
+        var target = ev.target;
+
+        if(target.tagName == "A") {
+            target = target.parentElement;
+        }
+        if(target.tagName == "TD") {
+            target = target.parentElement;
+        }
+        if(target.tagName == "TR") {
+            $(target).addClass('drag-over');
+            inst.draggedPlaylistDropId = $(target).attr('data-playlist-id');
+        }
+    });
+    $('#playlist').on('dragleave', {'instance': this}, function(ev) {
+        var inst = ev.data.instance;
+        var target = ev.target;
+
+        if(target.tagName == "A") {
+            target = target.parentElement;
+        }
+        if(target.tagName == "TD") {
+            target = target.parentElement;
+        }
+        if(target.tagName == "TR") {
+            if($(target).attr('data-playlist-id') != inst.draggedPlaylistDropId) {
+                $(target).removeClass('drag-over');
+            }
+        }
+    });
+    $('#playlist').on('dragover', function(ev) {
+        ev.preventDefault();
+    });
+    $('#playlist').on('drop', {'instance': this}, this.dropPlaylistItem);
+
+    $("button#add_track").on('click', {'instance': this},
+                             this.addTrack);
+    $("form#playlist_form").on('submit', {'instance': this},
+                               this.addTrack);
+};
+
+PlaylistEditor.prototype.dropPlaylistItem = function(ev) {
+    var inst = ev.data.instance;
+    ev.preventDefault();
+
+    var target = ev.target;
+    if(target.tagName == "A") {
+        target = target.parentElement;
+    }
+    if(target.tagName == "TD") {
+        target = target.parentElement;
+    }
+    if(target.tagName == "TR") {
+        var draggedId = inst.draggedPlaylistId;
+        var draggedItem = inst.playlist[inst.draggedPlaylistId];
+        var targetId = $(target).attr("data-playlist-id");
+
+        // remove existing entry for dragged item in playlist
+        inst.playlist.splice(inst.draggedPlaylistId, 1);
+
+        // add new entry for dragged item in playlist
+        // since the IDs will have now changed, we need to compensate based
+        // on where the dragged item was in the playlist
+        if(draggedId > targetId) {
+            var newId = parseInt(targetId) + 1;
+            inst.playlist.splice(newId, 0, draggedItem);
+        } else {
+            inst.playlist.splice(targetId, 0, draggedItem);
+        }
+
+        // reset dragged item variables
+        inst.draggedPlaylistId = null;
+        inst.draggedPlaylistDropId = null;
+
+        // redraw playlist and save
+        inst.updatePlaylist();
+    }
+};
+
+PlaylistEditor.prototype.loadPlaylist = function(existingTracks) {
+    for (var i = 0; i < existingTracks.length; i++) {
+        this.playlist.push({
+            'url': existingTracks[i]['url'],
+        });
+    }
+
+    this.updatePlaylist();
+};
+
+PlaylistEditor.prototype.updatePlaylist = function() {
+    $("table#playlist tbody tr").remove();
+    for (var i = 0; i < this.playlist.length; i++) {
+        var result = this.playlist[i];
+        $("table#playlist tbody").append(this.renderTrackRow({
+            'id': i,
+            'url': result['url'],
+        }, 'playlist'));
+    }
+};
+
+PlaylistEditor.prototype.renderTrackRow = function(track, context) {
+    var row = $('<tr>');
+
+    if(context == 'playlist') {
+        row.addClass('playlist-row');
+        row.attr('data-playlist-id', track['id']);
+
+        row.prop('draggable', true);
+        row.on('dragstart', {'instance': this}, function(ev) {
+            ev.data.instance.draggedPlaylistId = track['id'];
+        });
+        row.on('dragend', {'instance': this}, function(ev) {
+            ev.data.instance.draggedPlaylistDropId = null;
+        });
+    }
+
+    // main text entries
+
+    var cols = ['url'];
+    for(c in cols) {
+        var td = $('<td>');
+
+        var colName = cols[c];
+        td.addClass(colName);
+
+        if(colName == 'url') {
+            link = $('<a>');
+            link.attr('href', track[colName]);
+            link.attr('rel', 'noopener');
+            link.attr('target', _'blank');
+            link.text(decodeURI(track[colName]));
+            td.append(link);
+        } else {
+            td.text(track[colName]);
+        };
+
+        row.append(td);
+    }
+
+    // buttons
+
+    var td = $('<td>');
+    td.addClass('text-right');
+    var group = $('<div>');
+    group.addClass('btn-group');
+    td.append(group);
+    row.append(td);
+
+    if(context == 'playlist') {
+        group.addClass('playlist-actions');
+
+        /*var editBtn = $("<button class='btn btn-secondary btn-sm playlist-edit' title='Edit this track'><span class='oi oi-pencil'></span></button>");
+        editBtn.on('click', {'instance': this, 'context': 'playlist'},
+                   this.inlineEditTrack);
+        group.append(editBtn);*/
+
+        var deleteBtn = $("<button class='btn btn-danger btn-sm playlist-delete' type='button' title='Delete this track from playlist'><span class='oi oi-trash'></span></button>");
+        deleteBtn.on('click', {'instance': this}, function(ev) {
+            ev.data.instance.removeFromPlaylist(row);
+        });
+        group.append(deleteBtn);
+    }
+
+    return row;
+};
+
+PlaylistEditor.prototype.addTrack = function(ev) {
+    var inst = ev.data.instance;
+
+    // don't submit form
+    ev.preventDefault();
+
+    var newTrack = {
+        "url": $('input#url').val(),
+    };
+
+    $.ajax({
+        url: inst.baseUrl + "/api/validate_track",
+        dataType: "json",
+        data: newTrack,
+        success: function(data) {
+            if(data['result'] == true) {
+                $('input#url').val('');
+                newTrack['url'] = data['url'];
+
+                inst.playlist.push(newTrack);
+                inst.updatePlaylist();
+            } else {
+                console.log("Track failed to validate");
+            }
+        },
+    });
+};
+
+PlaylistEditor.prototype.removeFromPlaylist = function(element) {
+    id = $(element).attr('data-playlist-id');
+    this.playlist.splice(id, 1);
+    this.updatePlaylist();
+};

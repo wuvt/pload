@@ -1,0 +1,12 @@
+#playlist_container {
+    overflow-y: auto;
+    height: 400px;
+}
+
+tr.playlist-row[draggable=true] {
+    cursor: grab;
+}
+
+tr.playlist-row.drag-over {
+    box-shadow: 0 10px #007bff;
+}

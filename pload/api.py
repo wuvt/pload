@@ -1,8 +1,9 @@
 import datetime
-from flask import Blueprint, make_response, request
+from flask import Blueprint, jsonify, make_response, request
 from .db import db
+from .exceptions import PlaylistValidationException
 from .models import QueuedTrack
-from .view_utils import require_auth
+from .view_utils import require_auth, process_url
 
 
 bp = Blueprint("pload_api_v1", __name__)
@@ -52,3 +53,13 @@ def next_track():
 def underwriting():
     # TODO
     return "", 404, {"Content-Type": output_content_type}
+
+
+@bp.route("/validate_track")
+def validate_track():
+    try:
+        url = process_url(request.args["url"])
+    except PlaylistValidationException:
+        return jsonify({"result": False})
+    else:
+        return jsonify({"result": True, "url": url,})

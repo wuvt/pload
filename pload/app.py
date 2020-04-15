@@ -1,3 +1,4 @@
+import base64
 import os
 import urllib.parse
 from flask import Flask
@@ -5,12 +6,29 @@ from .views import bp
 from .db import db, init_db, migrate
 
 
-def add_security_headers(response):
-    response.headers[
-        "Content-Security-Policy"
-    ] = "default-src 'self'; frame-ancestors 'self'"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    return response
+def generate_nonce():
+    """Returns a random nonce."""
+    NONCE_LENGTH = 16
+    return base64.b64encode(os.urandom(NONCE_LENGTH)).decode("utf-8")
+
+
+def add_security_headers(script_nonce=None):
+    def add_security_headers_func(response):
+        csp_bits = ["default-src 'self'"]
+
+        if script_nonce is not None:
+            csp_bits.append("script-src 'self' 'nonce-{0}'".format(script_nonce))
+        else:
+            csp_bits.append("script-src 'self'")
+
+        csp_bits.append("img-src 'self' data:")
+        csp_bits.append("frame-ancestors 'self'")
+
+        response.headers["Content-Security-Policy"] = "; ".join(csp_bits)
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+    return add_security_headers_func
 
 
 def create_app(config=None):
@@ -38,13 +56,20 @@ def setup_app(app):
 
         app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
-    from .filters import format_datetime
+    from .filters import format_datetime, tztoutc
 
     app.jinja_env.filters.update(
-        {"datetime": format_datetime, "urldecode": urllib.parse.unquote}
+        {
+            "datetime": format_datetime,
+            "urldecode": urllib.parse.unquote,
+            "tztoutc": tztoutc,
+        }
     )
 
-    app.after_request(add_security_headers)
+    script_nonce = generate_nonce()
+    app.jinja_env.globals["script_nonce"] = script_nonce
+    app.after_request(add_security_headers(script_nonce))
+
     db.init_app(app)
     migrate.init_app(app, db)
 

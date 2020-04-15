@@ -10,13 +10,14 @@
         {{ date|datetime("%Y-%m-%d", False) }}
     </div>
 
-    <table class="table">
+    <table class="table table-striped table-hover">
         <thead>
-            <th scope="col" width="30%"></th>
+            <th scope="col" width="25%"></th>
             <th scope="col" width="40%">DJ</th>
             <th scope="col" width="10%">Tracks</th>
             <th scope="col" width="10%">Start Time</th>
             <th scope="col" width="10%">End Time</th>
+            <th scope="col" width="5%"></th>
         </thead>
         <tbody>
 {% for track in tracks %}
@@ -26,6 +27,9 @@
                 <td>{{ track.track_count }}</td>
                 <td>{{ track.timeslot_start|datetime("%H:%M", False) }}</td>
                 <td>{{ track.timeslot_end|datetime("%H:%M", False) }}</td>
+                <td>
+                    <a href="{{ url_for('pload.edit_playlist', queue=track.queue, timeslot_start=track.timeslot_start, timeslot_end=track.timeslot_end|tztoutc) }}" class='btn btn-secondary btn-sm playlist-edit' title='Edit this track'><span class='oi oi-pencil'></span></button>
+                </td>
             </tr>
 {% endfor %}
         </tbody>

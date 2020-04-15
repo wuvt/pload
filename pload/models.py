@@ -16,3 +16,14 @@ class QueuedTrack(db.Model):
         self.timeslot_end = timeslot_end
         self.queue = queue
         self.dj_id = dj_id
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "url": self.url,
+            "timeslot_start": self.timeslot_start,
+            "timeslot_end": self.timeslot_end,
+            "queue": self.queue,
+            "played": self.played,
+            "dj_id": self.dj_id,
+        }
