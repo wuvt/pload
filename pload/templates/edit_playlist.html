@@ -7,5 +7,35 @@
 var playlistEditor = new PlaylistEditor("{{ url_for('pload.index', _external=True)[:-1] }}");
 playlistEditor.init();
 playlistEditor.loadPlaylist({{ tracks|tojson }});
+
+$('#save_changes_btn').on('click', function(ev) {
+    $.ajax({
+        url: "{{ url_for('pload.edit_playlist') }}",
+        method: "POST",
+        dataType: "json",
+        data: {
+            timeslot_start: "{{ timeslot_start }}",
+            timeslot_end: "{{ timeslot_end }}",
+{%- if queue is not none %}
+            queue: "{{ queue }}",
+{%- endif %}
+{%- if dj_id is not none %}
+            dj_id: "{{ dj_id }}",
+{%- endif %}
+            tracks: playlistEditor.listTracks(),
+        },
+        success: function(data) {
+            if(data['success']) {
+                window.location.href = "{{ url_for('pload.index') }}";
+            } else {
+                if(typeof data['message'] != 'undefined') {
+                    alert(data['message']);
+                } else {
+                    alert("An error occurred while saving the playlist.");
+                }
+            }
+        },
+    });
+});
 </script>
 {% endblock %}

@@ -3,9 +3,11 @@ from dateutil.tz import gettz, UTC
 import datetime
 import dateutil.parser
 from flask import (
+    abort,
     Blueprint,
     current_app,
     flash,
+    jsonify,
     render_template,
     request,
 )
@@ -88,7 +90,6 @@ def index():
     dj_map = {int(dj["id"]): dj["airname"] for dj in djs}
     dj_map[1] = "Automation"
 
-    slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
     unplayed_tracks = (
         QueuedTrack.query.with_entities(
             QueuedTrack.timeslot_start,
@@ -273,29 +274,100 @@ overwrite the existing playlist, or pick another date or time slot."""
     return render_template("upload_prerecorded.html", form=form)
 
 
-@bp.route("/playlists/edit")
+@bp.route("/playlists/edit", methods=["GET", "POST"])
 def edit_playlist():
-    slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
-    timeslot_start = dateutil.parser.parse(request.args["timeslot_start"]).astimezone(
-        UTC
-    )
-    timeslot_end = dateutil.parser.parse(request.args["timeslot_end"]).astimezone(UTC)
-    queue = request.args.get("queue")
+    if request.method == "POST":
+        if request.headers.get("X-Requested-With") is None:
+            abort(400)
 
-    tracks = (
-        QueuedTrack.query.filter(
+        timeslot_start = dateutil.parser.parse(
+            request.form["timeslot_start"]
+        ).astimezone(UTC)
+        timeslot_end = dateutil.parser.parse(request.form["timeslot_end"]).astimezone(
+            UTC
+        )
+        queue = request.form.get("queue")
+        dj_id = request.form.get("dj_id")
+
+        existing_tracks = QueuedTrack.query.filter(
             QueuedTrack.timeslot_start >= timeslot_start,
             QueuedTrack.timeslot_end <= timeslot_end,
             QueuedTrack.queue == queue,
         )
-        .order_by(QueuedTrack.id)
-        .all()
-    )
+        if existing_tracks.filter(QueuedTrack.played == True).count() > 0:
+            return jsonify(
+                {
+                    "success": False,
+                    "results": [],
+                    "message": "One or more tracks have already been played.",
+                }
+            )
+
+        for track in existing_tracks.all():
+            db.session.delete(track)
+
+        index = 0
+        ok = True
+        results = []
+
+        for url in request.form.getlist("tracks[]"):
+            index += 1
+
+            try:
+                url = process_url(url)
+            except PlaylistValidationException:
+                ok = False
+                results.append(
+                    {"index": index, "url": url, "status": "Error",}
+                )
+                continue
+            else:
+                results.append(
+                    {"index": index, "url": url, "status": "OK",}
+                )
+
+            track = QueuedTrack(url, timeslot_start, timeslot_end, queue, dj_id)
+            db.session.add(track)
+
+        if ok:
+            db.session.commit()
+            return jsonify({"success": True,})
+        else:
+            db.session.rollback()
+            return jsonify(
+                {
+                    "success": False,
+                    "results": results,
+                    "message": "One or more tracks failed to pass validation.",
+                }
+            )
+    else:
+        timeslot_start = dateutil.parser.parse(
+            request.args["timeslot_start"]
+        ).astimezone(UTC)
+        timeslot_end = dateutil.parser.parse(request.args["timeslot_end"]).astimezone(
+            UTC
+        )
+        queue = request.args.get("queue")
+
+    tracks = QueuedTrack.query.filter(
+        QueuedTrack.timeslot_start >= timeslot_start,
+        QueuedTrack.timeslot_end <= timeslot_end,
+        QueuedTrack.queue == queue,
+    ).order_by(QueuedTrack.id)
+
+    dj_id = None
+    for track in tracks.all():
+        if track.played:
+            # FIXME
+            abort(400)
+        dj_id = track.dj_id
 
     return render_template(
         "edit_playlist.html",
-        prerecorded=queue == "prerecorded",
         timeslot_start=timeslot_start,
         timeslot_end=timeslot_end,
-        tracks=[t.serialize() for t in tracks],
+        queue=queue,
+        dj_id=dj_id,
+        tracks=[t.serialize() for t in tracks.all()],
     )

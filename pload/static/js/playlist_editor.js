@@ -131,7 +131,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     // main text entries
 
     var cols = ['url'];
-    for(c in cols) {
+    for(let c in cols) {
         var td = $('<td>');
 
         var colName = cols[c];
@@ -141,7 +141,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
             link = $('<a>');
             link.attr('href', track[colName]);
             link.attr('rel', 'noopener');
-            link.attr('target', _'blank');
+            link.attr('target', '_blank');
             link.text(decodeURI(track[colName]));
             td.append(link);
         } else {
@@ -210,4 +210,12 @@ PlaylistEditor.prototype.removeFromPlaylist = function(element) {
     id = $(element).attr('data-playlist-id');
     this.playlist.splice(id, 1);
     this.updatePlaylist();
+};
+
+PlaylistEditor.prototype.listTracks = function() {
+    var tracks = [];
+    for(let t in playlistEditor.playlist) {
+        tracks.push(playlistEditor.playlist[t]['url']);
+    }
+    return tracks;
 };
