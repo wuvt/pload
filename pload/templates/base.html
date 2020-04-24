@@ -21,6 +21,7 @@
                     <ul class="nav navbar-nav">
                         {% block nav_index %}<li class="nav-item"><a class="nav-link" href="{{ url_for('pload.index') }}">Scheduled Playlists</a></li>{% endblock %}
                         {% block nav_upload %}<li class="nav-item"><a class="nav-link" href="{{ url_for('pload.upload') }}">Upload</a></li>{% endblock %}
+                        {% block nav_create %}<li class="nav-item"><a class="nav-link" href="{{ url_for('pload.create_playlist') }}">Create Playlist</a></li>{% endblock %}
                     </ul>
                 </div>
             </div>

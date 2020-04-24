@@ -83,3 +83,31 @@ class PrerecordedPlaylistForm(FlaskForm):
     def validate_date(self, field):
         if field.data < datetime.datetime.now(get_slot_tz()).date():
             raise ValidationError("The date cannot be in the past.")
+
+
+class CreatePlaylistForm(FlaskForm):
+    queue = SelectField(
+        "Queue",
+        choices=[
+            ("", "Default (Automatic Traffic)"),
+            ("prerecorded", "Prerecorded (No Automatic Traffic)"),
+        ],
+        widget=BootstrapSelect(),
+    )
+    date = DateField(
+        "Date", validators=[validators.InputRequired()], widget=BootstrapDateInput()
+    )
+    time_start = TimeField(
+        "Start Time",
+        validators=[validators.InputRequired()],
+        widget=BootstrapTimeInput(),
+    )
+    time_end = TimeField(
+        "End Time", validators=[validators.InputRequired()], widget=BootstrapTimeInput()
+    )
+    overwrite = BooleanField("Overwrite the existing playlist (if one exists)")
+    dj_id = SelectField("DJ", choices=[("1", "Automation")], widget=BootstrapSelect())
+
+    def validate_date(self, field):
+        if field.data < datetime.datetime.now(get_slot_tz()).date():
+            raise ValidationError("The date cannot be in the past.")

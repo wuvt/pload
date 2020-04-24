@@ -13,7 +13,7 @@ from flask import (
 )
 from .db import db
 from .exceptions import PlaylistExistsException, PlaylistValidationException
-from .forms import PlaylistForm, PrerecordedPlaylistForm
+from .forms import PlaylistForm, PrerecordedPlaylistForm, CreatePlaylistForm
 from .models import QueuedTrack
 from .view_utils import process_url, get_dj_list
 
@@ -371,3 +371,69 @@ def edit_playlist():
         dj_id=dj_id,
         tracks=[t.serialize() for t in tracks.all()],
     )
+
+
+@bp.route("/playlists/new", methods=["GET", "POST"])
+def create_playlist():
+    form = CreatePlaylistForm()
+
+    # get list of DJs from Trackman and add
+    djs = get_dj_list()
+    form.dj_id.choices += [(str(dj["id"]), dj["airname"]) for dj in djs]
+
+    if form.validate_on_submit():
+        slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
+
+        timeslot_start = datetime.datetime(
+            form.date.data.year,
+            form.date.data.month,
+            form.date.data.day,
+            form.time_start.data.hour,
+            form.time_start.data.minute,
+            tzinfo=slot_tz,
+        )
+        timeslot_end = datetime.datetime(
+            form.date.data.year,
+            form.date.data.month,
+            form.date.data.day,
+            form.time_end.data.hour,
+            form.time_end.data.minute,
+            tzinfo=slot_tz,
+        )
+
+        if timeslot_end <= timeslot_start:
+            timeslot_end += datetime.timedelta(days=1)
+
+        # convert times to UTC for querying the database
+        timeslot_start = timeslot_start.astimezone(UTC)
+        timeslot_end = timeslot_end.astimezone(UTC)
+
+        if len(form.queue.data) <= 0:
+            queue = None
+        else:
+            queue = form.queue.data
+
+        existing_tracks = QueuedTrack.query.filter(
+            QueuedTrack.timeslot_start >= timeslot_start,
+            QueuedTrack.timeslot_end <= timeslot_end,
+            QueuedTrack.queue == queue,
+        )
+
+        # check if overwriting is necessary
+        if existing_tracks.count() > 0 and not form.overwrite.data:
+            flash(
+                """\
+A playlist already exists for that date and time slot. You'll need to either
+overwrite the existing playlist, or pick another date or time slot."""
+            )
+        else:
+            return render_template(
+                "edit_playlist.html",
+                timeslot_start=timeslot_start,
+                timeslot_end=timeslot_end,
+                queue=form.queue.data,
+                dj_id=form.dj_id.data,
+                tracks=[],
+            )
+
+    return render_template("create_playlist.html", form=form)

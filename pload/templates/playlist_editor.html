@@ -1,13 +1,13 @@
 {% set wide_page = true %}
 {% extends "base.html" %}
 {% block content %}
-<h1>Playlist Editor</h1>
+<h1>{% if playlist_editor_title %}{{ playlist_editor_title }}{% else %}Playlist Editor{% endif %}</h1>
 
 <div class="card mt-1" id="playlist_card">
     <div class="card-body">
         <div class="float-right">
             {% if return_url %}<a href="{{ return_url }}" class="btn btn-secondary">Cancel</a>{% endif %}
-            <button type="button" id="save_changes_btn" class="btn btn-primary">Save Changes</button>
+            <button type="button" id="save_changes_btn" class="btn btn-primary">{% if save_changes_btn_label %}{{ save_changes_btn_label }}{% else %}Save Changes{% endif %}</button>
         </div>
         <h5 class="card-title">{% if queue == "prerecorded" %}Prerecorded Show{% else %}Playlist{% endif %}</h5>
         <p class="card-text">Scheduled to play between {{ timeslot_start|datetime }} and {{ timeslot_end|datetime }}.</p>
