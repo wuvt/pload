@@ -151,9 +151,6 @@ def index():
             }
         )
 
-    # FIXME
-    print(unplayed)
-
     return render_template("index.html", playlist_groups=unplayed)
 
 
