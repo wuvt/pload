@@ -13,6 +13,7 @@ from flask import (
 )
 from .db import db
 from .exceptions import PlaylistExistsException, PlaylistValidationException
+from .filters import localize_datetime
 from .forms import PlaylistForm, PrerecordedPlaylistForm, CreatePlaylistForm
 from .models import Playlist, QueuedTrack
 from .view_utils import process_url, get_dj_list
@@ -138,6 +139,9 @@ def index():
     ) in playlists:
         if dj_id is None:
             dj_id = 1
+
+        timeslot_start = localize_datetime(timeslot_start)
+        timeslot_end = localize_datetime(timeslot_end)
 
         unplayed[timeslot_start.date()].append(
             {
