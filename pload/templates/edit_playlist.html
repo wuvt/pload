@@ -10,18 +10,10 @@ playlistEditor.loadPlaylist({{ tracks|tojson }});
 
 $('#save_changes_btn').on('click', function(ev) {
     $.ajax({
-        url: "{{ url_for('pload.edit_playlist') }}",
+        url: "{{ url_for('pload.edit_playlist', playlist_id=playlist.id) }}",
         method: "POST",
         dataType: "json",
         data: {
-            timeslot_start: "{{ timeslot_start }}",
-            timeslot_end: "{{ timeslot_end }}",
-{%- if queue is not none %}
-            queue: "{{ queue }}",
-{%- endif %}
-{%- if dj_id is not none %}
-            dj_id: "{{ dj_id }}",
-{%- endif %}
             tracks: playlistEditor.listTracks(),
         },
         success: function(data) {

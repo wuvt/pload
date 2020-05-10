@@ -4,7 +4,7 @@
 <div class="container">
 <h1>Scheduled Playlists</h1>
 
-{% for date, tracks in unplayed_tracks.items() %}
+{% for date, playlists in playlist_groups.items() %}
 <div class="card mt-1">
     <div class="card-header">
         {{ date|datetime("%Y-%m-%d", False) }}
@@ -20,15 +20,16 @@
             <th scope="col" width="5%"></th>
         </thead>
         <tbody>
-{% for track in tracks %}
+{% for playlist in playlists %}
             <tr>
-                <td>{% if track.queue != "prerecorded" %}Playlist{% else %}Prerecorded Show{% endif %}</td>
-                <td>{{ track.dj }}</td>
-                <td>{{ track.track_count }}</td>
-                <td>{{ track.timeslot_start|datetime("%H:%M", False) }}</td>
-                <td>{{ track.timeslot_end|datetime("%H:%M", False) }}</td>
+                <td>{% if playlist.queue != "prerecorded" %}Playlist{% else %}Prerecorded Show{% endif %}</td>
+                <td>{{ playlist.dj }}</td>
+                <td>{{ playlist.track_count }}</td>
+                <td>{{ playlist.timeslot_start|datetime("%H:%M", False) }}</td>
+                <td>{{ playlist.timeslot_end|datetime("%H:%M", False) }}</td>
                 <td>
-                    <a href="{{ url_for('pload.edit_playlist', queue=track.queue, timeslot_start=track.timeslot_start, timeslot_end=track.timeslot_end|tztoutc) }}" class='btn btn-secondary btn-sm playlist-edit' title='Edit this track'><span class='oi oi-pencil'></span></button>
+                    <a href="{{ url_for('pload.edit_playlist', playlist_id=playlist.id) }}" class="btn btn-secondary btn-sm playlist-edit" title="Edit this playlist"><span class="oi oi-pencil"></span></button>
+                    {# TODO: delete playlist #}
                 </td>
             </tr>
 {% endfor %}

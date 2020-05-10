@@ -2,7 +2,7 @@ import datetime
 from flask import Blueprint, jsonify, make_response, request
 from .db import db
 from .exceptions import PlaylistValidationException
-from .models import QueuedTrack
+from .models import QueuedTrack, Playlist
 from .view_utils import require_auth, process_url
 
 
@@ -23,26 +23,30 @@ def next_track():
     else:
         queue = None
 
-    next_track = QueuedTrack.query.filter(
-        QueuedTrack.timeslot_start <= now,
-        QueuedTrack.timeslot_end > now,
-        QueuedTrack.queue == queue,
-        QueuedTrack.played == False,
+    playlist = Playlist.query.filter(
+        Playlist.timeslot_start <= now,
+        Playlist.timeslot_end > now,
+        Playlist.queue == queue,
+        Playlist.approved != None,
     ).first()
+    if playlist is not None:
+        next_track = QueuedTrack.query.filter(
+            QueuedTrack.playlist_id == playlist.id, QueuedTrack.played == False,
+        ).first()
 
-    if next_track is not None:
-        next_track.played = True
-        db.session.commit()
+        if next_track is not None:
+            next_track.played = True
+            db.session.commit()
 
-        url = next_track.url
-        if next_track.dj_id is not None and next_track.dj_id > 1:
-            url = "annotate:trackman_dj_id={dj_id:d}:{url}".format(
-                dj_id=next_track.dj_id, url=url
-            )
+            url = next_track.url
+            if playlist.dj_id is not None and playlist.dj_id > 1:
+                url = "annotate:trackman_dj_id={dj_id:d}:{url}".format(
+                    dj_id=playlist.dj_id, url=url
+                )
 
-        resp = make_response("{0}\n".format(url))
-        resp.headers["Content-Type"] = output_content_type
-        return resp
+            resp = make_response("{0}\n".format(url))
+            resp.headers["Content-Type"] = output_content_type
+            return resp
 
     # if we made it here, we've run out of songs in the playlist
     return "", 404, {"Content-Type": output_content_type}

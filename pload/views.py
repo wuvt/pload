@@ -14,7 +14,7 @@ from flask import (
 from .db import db
 from .exceptions import PlaylistExistsException, PlaylistValidationException
 from .forms import PlaylistForm, PrerecordedPlaylistForm, CreatePlaylistForm
-from .models import QueuedTrack
+from .models import Playlist, QueuedTrack
 from .view_utils import process_url, get_dj_list
 
 
@@ -39,16 +39,22 @@ def process_playlist_upload(
 
     # db.session.begin_nested()
 
-    existing_tracks = QueuedTrack.query.filter(
-        QueuedTrack.timeslot_start >= timeslot_start,
-        QueuedTrack.timeslot_end <= timeslot_end,
-        QueuedTrack.queue == queue,
+    existing_playlists = Playlist.query.filter(
+        Playlist.timeslot_start >= timeslot_start,
+        Playlist.timeslot_end <= timeslot_end,
+        Playlist.queue == queue,
     )
-    if existing_tracks.count() > 0 and not overwrite:
+    if existing_playlists.count() > 0 and not overwrite:
         raise PlaylistExistsException()
     elif overwrite:
-        for track in existing_tracks.all():
-            db.session.delete(track)
+        # We're overwriting, so delete all tracks for all matching
+        # playlists
+        for playlist in existing_playlists.all():
+            for track in playlist.tracks:
+                db.session.delete(track)
+            db.session.delete(playlist)
+
+    tracks_to_add = []
 
     for line in playlist_fo:
         url = line.strip().decode("utf-8")
@@ -73,10 +79,16 @@ def process_playlist_upload(
         if line_wrapper is not None:
             url = line_wrapper(url)
 
-        track = QueuedTrack(url, timeslot_start, timeslot_end, queue, dj_id)
-        db.session.add(track)
+        tracks_to_add.append(url)
 
     if ok:
+        playlist = Playlist(timeslot_start, timeslot_end, dj_id, queue)
+        db.session.add(playlist)
+        db.session.commit()
+
+        for url in tracks_to_add:
+            track = QueuedTrack(url, playlist.id)
+            db.session.add(track)
         db.session.commit()
     else:
         db.session.rollback()
@@ -90,33 +102,46 @@ def index():
     dj_map = {int(dj["id"]): dj["airname"] for dj in djs}
     dj_map[1] = "Automation"
 
-    unplayed_tracks = (
+    tracks_sq = (
         QueuedTrack.query.with_entities(
-            QueuedTrack.timeslot_start,
-            QueuedTrack.timeslot_end,
-            QueuedTrack.queue,
-            QueuedTrack.dj_id,
-            db.func.count(QueuedTrack.id),
+            QueuedTrack.playlist_id,
+            db.func.count(QueuedTrack.playlist_id).label("count"),
         )
-        .filter(QueuedTrack.timeslot_end >= datetime.datetime.utcnow())
-        .group_by(
-            QueuedTrack.timeslot_start,
-            QueuedTrack.timeslot_end,
-            QueuedTrack.queue,
-            QueuedTrack.dj_id,
+        .group_by(QueuedTrack.playlist_id)
+        .subquery()
+    )
+
+    playlists = (
+        Playlist.query.with_entities(
+            Playlist.id,
+            Playlist.timeslot_start,
+            Playlist.timeslot_end,
+            Playlist.queue,
+            Playlist.dj_id,
+            tracks_sq.c.count,
         )
-        .order_by(QueuedTrack.timeslot_start)
+        .join(tracks_sq, tracks_sq.c.playlist_id == Playlist.id)
+        .filter(Playlist.timeslot_end >= datetime.datetime.utcnow(),)
+        .order_by(Playlist.timeslot_start)
         .all()
     )
 
     # localize dates and then group by them
     unplayed = defaultdict(list)
-    for timeslot_start, timeslot_end, queue, dj_id, track_count in unplayed_tracks:
+    for (
+        playlist_id,
+        timeslot_start,
+        timeslot_end,
+        queue,
+        dj_id,
+        track_count,
+    ) in playlists:
         if dj_id is None:
             dj_id = 1
 
         unplayed[timeslot_start.date()].append(
             {
+                "id": playlist_id,
                 "timeslot_start": timeslot_start,
                 "timeslot_end": timeslot_end,
                 "queue": queue,
@@ -126,7 +151,10 @@ def index():
             }
         )
 
-    return render_template("index.html", unplayed_tracks=unplayed)
+    # FIXME
+    print(unplayed)
+
+    return render_template("index.html", playlist_groups=unplayed)
 
 
 @bp.route("/upload/playlist", methods=["GET", "POST"])
@@ -274,25 +302,16 @@ overwrite the existing playlist, or pick another date or time slot."""
     return render_template("upload_prerecorded.html", form=form)
 
 
-@bp.route("/playlists/edit", methods=["GET", "POST"])
-def edit_playlist():
+@bp.route("/playlists/edit/<int:playlist_id>", methods=["GET", "POST"])
+def edit_playlist(playlist_id):
+    playlist = Playlist.query.get_or_404(playlist_id)
+
     if request.method == "POST":
         if request.headers.get("X-Requested-With") is None:
             abort(400)
 
-        timeslot_start = dateutil.parser.parse(
-            request.form["timeslot_start"]
-        ).astimezone(UTC)
-        timeslot_end = dateutil.parser.parse(request.form["timeslot_end"]).astimezone(
-            UTC
-        )
-        queue = request.form.get("queue")
-        dj_id = request.form.get("dj_id")
-
         existing_tracks = QueuedTrack.query.filter(
-            QueuedTrack.timeslot_start >= timeslot_start,
-            QueuedTrack.timeslot_end <= timeslot_end,
-            QueuedTrack.queue == queue,
+            QueuedTrack.playlist_id == playlist_id,
         )
         if existing_tracks.filter(QueuedTrack.played == True).count() > 0:
             return jsonify(
@@ -326,7 +345,7 @@ def edit_playlist():
                     {"index": index, "url": url, "status": "OK",}
                 )
 
-            track = QueuedTrack(url, timeslot_start, timeslot_end, queue, dj_id)
+            track = QueuedTrack(url, playlist.id)
             db.session.add(track)
 
         if ok:
@@ -341,34 +360,18 @@ def edit_playlist():
                     "message": "One or more tracks failed to pass validation.",
                 }
             )
-    else:
-        timeslot_start = dateutil.parser.parse(
-            request.args["timeslot_start"]
-        ).astimezone(UTC)
-        timeslot_end = dateutil.parser.parse(request.args["timeslot_end"]).astimezone(
-            UTC
-        )
-        queue = request.args.get("queue")
 
-    tracks = QueuedTrack.query.filter(
-        QueuedTrack.timeslot_start >= timeslot_start,
-        QueuedTrack.timeslot_end <= timeslot_end,
-        QueuedTrack.queue == queue,
-    ).order_by(QueuedTrack.id)
+    tracks = playlist.tracks.order_by(QueuedTrack.id)
 
-    dj_id = None
+    # Make sure no tracks in the playlist have been played yet
     for track in tracks.all():
         if track.played:
             # FIXME
             abort(400)
-        dj_id = track.dj_id
 
     return render_template(
         "edit_playlist.html",
-        timeslot_start=timeslot_start,
-        timeslot_end=timeslot_end,
-        queue=queue,
-        dj_id=dj_id,
+        playlist=playlist,
         tracks=[t.serialize() for t in tracks.all()],
     )
 
@@ -413,27 +416,34 @@ def create_playlist():
         else:
             queue = form.queue.data
 
-        existing_tracks = QueuedTrack.query.filter(
-            QueuedTrack.timeslot_start >= timeslot_start,
-            QueuedTrack.timeslot_end <= timeslot_end,
-            QueuedTrack.queue == queue,
+        existing_playlists = Playlist.query.filter(
+            Playlist.timeslot_start >= timeslot_start,
+            Playlist.timeslot_end <= timeslot_end,
+            Playlist.queue == queue,
         )
 
         # check if overwriting is necessary
-        if existing_tracks.count() > 0 and not form.overwrite.data:
+        if existing_playlists.count() > 0 and not form.overwrite.data:
             flash(
                 """\
 A playlist already exists for that date and time slot. You'll need to either
 overwrite the existing playlist, or pick another date or time slot."""
             )
         else:
-            return render_template(
-                "edit_playlist.html",
-                timeslot_start=timeslot_start,
-                timeslot_end=timeslot_end,
-                queue=form.queue.data,
-                dj_id=form.dj_id.data,
-                tracks=[],
+            # We're overwriting, so delete all tracks for all matching
+            # playlists
+            for playlist in existing_playlists.all():
+                for track in playlist.tracks:
+                    db.session.delete(track)
+                db.session.delete(playlist)
+
+            playlist = Playlist(
+                timeslot_start, timeslot_end, form.dj_id.data, form.queue.data
             )
+            db.session.add(playlist)
+
+            db.session.commit()
+
+            return render_template("edit_playlist.html", playlist=playlist, tracks=[],)
 
     return render_template("create_playlist.html", form=form)

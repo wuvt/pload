@@ -9,8 +9,8 @@
             {% if return_url %}<a href="{{ return_url }}" class="btn btn-secondary">Cancel</a>{% endif %}
             <button type="button" id="save_changes_btn" class="btn btn-primary">{% if save_changes_btn_label %}{{ save_changes_btn_label }}{% else %}Save Changes{% endif %}</button>
         </div>
-        <h5 class="card-title">{% if queue == "prerecorded" %}Prerecorded Show{% else %}Playlist{% endif %}</h5>
-        <p class="card-text">Scheduled to play between {{ timeslot_start|datetime }} and {{ timeslot_end|datetime }}.</p>
+        <h5 class="card-title">{% if playlist.queue == "prerecorded" %}Prerecorded Show{% else %}Playlist{% endif %}</h5>
+        <p class="card-text">Scheduled to play between {{ playlist.timeslot_start|datetime }} and {{ playlist.timeslot_end|datetime }}.</p>
     </div>
 
     <table class="table table-condensed mb-0">
