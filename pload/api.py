@@ -27,12 +27,16 @@ def next_track():
         Playlist.timeslot_start <= now,
         Playlist.timeslot_end > now,
         Playlist.queue == queue,
-        Playlist.approved != None,
+        # Playlist.approved != None,
     ).first()
     if playlist is not None:
-        next_track = QueuedTrack.query.filter(
-            QueuedTrack.playlist_id == playlist.id, QueuedTrack.played == False,
-        ).first()
+        next_track = (
+            QueuedTrack.query.filter(
+                QueuedTrack.playlist_id == playlist.id, QueuedTrack.played == False,
+            )
+            .order_by(QueuedTrack.id)
+            .first()
+        )
 
         if next_track is not None:
             next_track.played = True
