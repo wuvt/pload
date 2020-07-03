@@ -29,12 +29,12 @@
     </div>
 </div>
 
-<div class="card mt-1">
+<div class="card mt-1" id="search_container">
     <div class="card-body">
         <form id="playlist_form">
             <div class="form-group row">
                 <div class="col-sm-10">
-                    <input type="text" name="url" id="url" value="" class="form-control" label="URL"/>
+                    <input type="text" name="url" id="url" value="" class="form-control" placeholder="URL" title="URL"/>
                 </div>
                 <div class="col-sm-1">
                     <button type="button" id="add_track" class="btn btn-primary">
@@ -44,6 +44,40 @@
                 </div>
             </div>
         </form>
+
+        <form id="playlist_search_form">
+            <div class="form-group row">
+                <div class="col-sm-10">
+                    <input type="text" name="q" id="q" value="" class="form-control" title="Search Query"/>
+                </div>
+                <div class="col-sm-1">
+                    <button type="button" id="search_tracks_btn" class="btn btn-secondary">
+                        <span class="oi oi-magnifying-glass"></span>
+                        Search
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <table class='table table-condensed mb-0'>
+            <thead title="These are your track search results. When you enter a query above, results will appear here.">
+                <tr>
+                    <th>Artist</th>
+                    <th>Title</th>
+                    <th>Album</th>
+                    <th>Label</th>
+                    <th>URL</th>
+                    <th></th>
+                </tr>
+            </thead>
+        </table>
+
+        <div id="search_results_container">
+            <table class='table table-condensed table-striped table-hover mb-0' id="search_results">
+                <tbody>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -4,6 +4,10 @@ PROXY_FIX_NUM_PROXIES = 1
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
+ELASTICSEARCH_HOSTS = [
+    'http://elasticsearch:9200/',
+]
+
 TIME_SLOTS = {
     "early": "Overnight (00:00-06:00)",
     "morning": "Early Morning (06:00-09:00)",

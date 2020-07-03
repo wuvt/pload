@@ -4,6 +4,7 @@ import urllib.parse
 from flask import Flask
 from .views import bp
 from .db import db, init_db, migrate
+from .es import es
 
 
 def generate_nonce():
@@ -72,6 +73,7 @@ def setup_app(app):
 
     db.init_app(app)
     migrate.init_app(app, db)
+    es.init_app(app)
 
     if app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite://"):
         with app.app_context():

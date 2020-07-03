@@ -1,6 +1,14 @@
-#playlist_container {
+#playlist_container,
+#search_results_container {
     overflow-y: auto;
-    height: 400px;
+}
+
+#playlist_container {
+    height: 250px;
+}
+
+#search_results_container {
+    height: 150px;
 }
 
 tr.playlist-row[draggable=true] {
@@ -9,4 +17,25 @@ tr.playlist-row[draggable=true] {
 
 tr.playlist-row.drag-over {
     box-shadow: 0 10px #007bff;
+}
+
+#search_container .table th:nth-child(1),
+#search_container .table td:nth-child(1),
+#search_container .table th:nth-child(2),
+#search_container .table td:nth-child(2),
+#search_container .table th:nth-child(3),
+#search_container .table td:nth-child(3),
+#search_container .table th:nth-child(4),
+#search_container .table td:nth-child(4) {
+    width: 15%;
+}
+
+#search_container .table th:nth-child(5),
+#search_container .table td:nth-child(5) {
+    width: 25%;
+}
+
+#search_container .table th:nth-child(6),
+#search_container .table td:nth-child(6) {
+    width: 10%;
 }
