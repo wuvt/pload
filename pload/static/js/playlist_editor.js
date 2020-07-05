@@ -121,9 +121,6 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     var row = $('<tr>');
     var cols = [];
 
-    // FIXME
-    console.log(track);
-
     if(context == 'playlist') {
         cols.push('url');
 
