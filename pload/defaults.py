@@ -35,6 +35,6 @@ TRACK_URL_REWRITES = [
     (r"https:\/\/files\.apps\.wuvt\.vt\.edu", "http://alexandria.wuvt.vt.edu"),
 ]
 TRACK_URL_DISPLAY_REWRITES = [
-    (r"http:\/\/alexandria\.wuvt\.vt\.edu", "https://files.wuvt.vt.edu"),
-    (r"http:\/\/192\.168\.0\.25", "https://files.wuvt.vt.edu"),
+    (r"http:\/\/alexandria\.wuvt\.vt\.edu", "https://files.apps.wuvt.vt.edu"),
+    (r"http:\/\/192\.168\.0\.25", "https://files.apps.wuvt.vt.edu"),
 ]
