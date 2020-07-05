@@ -62,6 +62,9 @@ def process_url(url, skip_validate=False):
         return ":".join(frags)
     elif url[0:7] == "http://" or url[0:8] == "https://":
         url = requests.utils.requote_uri(url)
+        for pattern, replacement in current_app.config["TRACK_URL_REWRITES"]:
+            pattern_re = re.compile(pattern)
+            url = pattern_re.sub(replacement, url)
         if not skip_validate and not validate_url(url):
             raise PlaylistValidationException()
         return url
@@ -70,6 +73,13 @@ def process_url(url, skip_validate=False):
             raise PlaylistValidationException()
         else:
             return url
+
+
+def process_url_for_display(url):
+    for pattern, replacement in current_app.config["TRACK_URL_DISPLAY_REWRITES"]:
+        pattern_re = re.compile(pattern)
+        url = pattern_re.sub(replacement, url)
+    return url
 
 
 def get_dj_list():

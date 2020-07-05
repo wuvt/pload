@@ -5,7 +5,7 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
 ELASTICSEARCH_HOSTS = [
-    'http://elasticsearch:9200/',
+    "http://elasticsearch:9200/",
 ]
 
 TIME_SLOTS = {
@@ -20,7 +20,8 @@ TIME_SLOTS = {
 TIME_SLOTS_BY_HOUR = {
     0: "early",
     6: "morning",
-    14: "noon",
+    9: "noon",
+    14: "afternoon",
     17: "jazz",
     19: "night",
 }
@@ -30,3 +31,10 @@ TIME_SLOT_TZ = "America/New_York"
 TRACKMAN_URL = "https://trackman-fm.apps.wuvt.vt.edu/"
 
 TRACK_VALIDATE_CHECK_EXISTS = True
+TRACK_URL_REWRITES = [
+    (r"https:\/\/files\.apps\.wuvt\.vt\.edu", "http://alexandria.wuvt.vt.edu"),
+]
+TRACK_URL_DISPLAY_REWRITES = [
+    (r"http:\/\/alexandria\.wuvt\.vt\.edu", "https://files.wuvt.vt.edu"),
+    (r"http:\/\/192\.168\.0\.25", "https://files.wuvt.vt.edu"),
+]

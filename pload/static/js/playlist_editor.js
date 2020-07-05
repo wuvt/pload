@@ -1,5 +1,6 @@
 function PlaylistEditor(baseUrl) {
     this.baseUrl = baseUrl;
+    this.displayRewrites = [];
 }
 
 PlaylistEditor.prototype.init = function() {
@@ -156,10 +157,10 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
 
         if(colName == 'url') {
             link = $('<a>');
-            link.attr('href', track[colName]);
+            link.attr('href', this.processDisplayUrl(track[colName]));
             link.attr('rel', 'noopener');
             link.attr('target', '_blank');
-            link.text(decodeURI(track[colName]));
+            link.text(decodeURI(this.processDisplayUrl(track[colName])));
             td.append(link);
         } else {
             td.text(track[colName]);
@@ -269,4 +270,13 @@ PlaylistEditor.prototype.searchForTracks = function(ev) {
             }
         },
     });
+};
+
+PlaylistEditor.prototype.processDisplayUrl = function(url) {
+    for(let i = 0; i < this.displayRewrites.length; i++) {
+        let re = new RegExp(this.displayRewrites[i][0]);
+        url = url.replace(re, this.displayRewrites[i][1]);
+    }
+
+    return url;
 };
