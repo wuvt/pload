@@ -102,7 +102,7 @@ def initdb():
 @click.option("--json-path")
 def import_songs(json_path):
     with app.app_context():
-        es.delete_by_query("songs", body={"query": {"term": {"url": "*",},},})
+        es.delete_by_query("songs", body={"query": {"match_all": {},},})
 
         data = json.load(open(json_path))
         for entry in data:
