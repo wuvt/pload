@@ -1,9 +1,13 @@
 import base64
+import click
+import json
 import os
 import urllib.parse
+import uuid
 from flask import Flask
 from .views import bp
 from .db import db, init_db, migrate
+from .es import es
 
 
 def generate_nonce():
@@ -72,6 +76,7 @@ def setup_app(app):
 
     db.init_app(app)
     migrate.init_app(app, db)
+    es.init_app(app)
 
     if app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite://"):
         with app.app_context():
@@ -91,3 +96,14 @@ app = create_app()
 def initdb():
     with app.app_context():
         init_db()
+
+
+@app.cli.command()
+@click.option("--json-path")
+def import_songs(json_path):
+    with app.app_context():
+        es.delete_by_query("songs", body={"query": {"match_all": {},},})
+
+        data = json.load(open(json_path))
+        for entry in data:
+            es.create("songs", uuid.uuid4(), body=entry)

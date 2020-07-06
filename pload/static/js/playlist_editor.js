@@ -1,5 +1,6 @@
 function PlaylistEditor(baseUrl) {
     this.baseUrl = baseUrl;
+    this.displayRewrites = [];
 }
 
 PlaylistEditor.prototype.init = function() {
@@ -51,6 +52,10 @@ PlaylistEditor.prototype.initPlaylist = function() {
                              this.addTrack);
     $("form#playlist_form").on('submit', {'instance': this},
                                this.addTrack);
+    $("button#search_tracks_btn").on('click', {'instance': this},
+                                     this.searchForTracks);
+    $("form#playlist_search_form").on('submit', {'instance': this},
+                                      this.searchForTracks);
 };
 
 PlaylistEditor.prototype.dropPlaylistItem = function(ev) {
@@ -114,8 +119,11 @@ PlaylistEditor.prototype.updatePlaylist = function() {
 
 PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     var row = $('<tr>');
+    var cols = [];
 
     if(context == 'playlist') {
+        cols.push('url');
+
         row.addClass('playlist-row');
         row.attr('data-playlist-id', track['id']);
 
@@ -126,11 +134,18 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
         row.on('dragend', {'instance': this}, function(ev) {
             ev.data.instance.draggedPlaylistDropId = null;
         });
+    } else if(context == 'search_results') {
+        if(typeof track['title'] == 'undefined') {
+            track['title'] = track['song'];
+        }
+
+        cols.push('artist', 'title', 'album', 'label', 'url');
+
+        row.attr('data-url', track['url']);
     }
 
     // main text entries
 
-    var cols = ['url'];
     for(let c in cols) {
         var td = $('<td>');
 
@@ -139,10 +154,10 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
 
         if(colName == 'url') {
             link = $('<a>');
-            link.attr('href', track[colName]);
+            link.attr('href', this.processDisplayUrl(track[colName]));
             link.attr('rel', 'noopener');
             link.attr('target', '_blank');
-            link.text(decodeURI(track[colName]));
+            link.text(decodeURI(this.processDisplayUrl(track[colName])));
             td.append(link);
         } else {
             td.text(track[colName]);
@@ -173,6 +188,16 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
             ev.data.instance.removeFromPlaylist(row);
         });
         group.append(deleteBtn);
+    } else if(context == 'search_results') {
+        group.addClass('playlist-actions');
+
+        var addBtn = $("<button class='btn btn-primary btn-sm search-add' type='button' title='Add this track to the playlist'><span class='oi oi-plus'></span></button>");
+        addBtn.on('click', {'instance': this}, function(ev) {
+            var inst = ev.data.instance;
+            inst.playlist.push(track);
+            inst.updatePlaylist();
+        });
+        group.append(addBtn);
     }
 
     return row;
@@ -218,4 +243,37 @@ PlaylistEditor.prototype.listTracks = function() {
         tracks.push(playlistEditor.playlist[t]['url']);
     }
     return tracks;
+};
+
+PlaylistEditor.prototype.searchForTracks = function(ev) {
+    var inst = ev.data.instance;
+
+    // don't submit form
+    ev.preventDefault();
+
+    $.ajax({
+        method: "GET",
+        url: inst.baseUrl + "/api/search",
+        dataType: "json",
+        data: {
+            "q": $('#playlist_search_form input#q').val(),
+        },
+        success: function(data) {
+            $("table#search_results tbody tr").remove();
+            for (var i = 0; i < data['hits'].length; i++) {
+                var result = data['hits'][i];
+                $("table#search_results tbody").append(inst.renderTrackRow(
+                    result['_source'], 'search_results'));
+            }
+        },
+    });
+};
+
+PlaylistEditor.prototype.processDisplayUrl = function(url) {
+    for(let i = 0; i < this.displayRewrites.length; i++) {
+        let re = new RegExp(this.displayRewrites[i][0]);
+        url = url.replace(re, this.displayRewrites[i][1]);
+    }
+
+    return url;
 };

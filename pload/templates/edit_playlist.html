@@ -5,6 +5,7 @@
 {{ super() }}
 <script nonce="{{ script_nonce }}">
 var playlistEditor = new PlaylistEditor("{{ url_for('pload.index', _external=True)[:-1] }}");
+playlistEditor.displayRewrites = {{ config.TRACK_URL_DISPLAY_REWRITES|tojson }};
 playlistEditor.init();
 playlistEditor.loadPlaylist({{ tracks|tojson }});
 

@@ -1,6 +1,7 @@
 import datetime
 from flask import Blueprint, jsonify, make_response, request
 from .db import db
+from .es import es
 from .exceptions import PlaylistValidationException
 from .models import QueuedTrack, Playlist
 from .view_utils import require_auth, process_url
@@ -71,3 +72,9 @@ def validate_track():
         return jsonify({"result": False})
     else:
         return jsonify({"result": True, "url": url,})
+
+
+@bp.route("/search")
+def search():
+    results = es.search(q=request.args["q"])
+    return jsonify(results["hits"])
