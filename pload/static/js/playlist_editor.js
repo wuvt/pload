@@ -5,6 +5,7 @@ function PlaylistEditor(baseUrl) {
 
 PlaylistEditor.prototype.init = function() {
     this.initPlaylist();
+    this.initImport();
 };
 
 PlaylistEditor.prototype.initPlaylist = function() {
@@ -225,7 +226,7 @@ PlaylistEditor.prototype.addTrack = function(ev) {
                 inst.playlist.push(newTrack);
                 inst.updatePlaylist();
             } else {
-                console.log("Track failed to validate");
+                console.log("Track failed to validate: " + JSON.stringify(newTrack));
             }
         },
     });
@@ -276,4 +277,79 @@ PlaylistEditor.prototype.processDisplayUrl = function(url) {
     }
 
     return url;
+};
+
+PlaylistEditor.prototype.initImport = function() {
+    $("button#import_m3u_submit_btn").on('click', {'instance': this}, function(ev) {
+        var inst = ev.data.instance;
+
+        var uploadControl = document.getElementById('import_m3u_input');
+        if(uploadControl.files.length != 1) {
+            alert("Upload only one file a time.");
+            return;
+        }
+
+        var playlistFile = uploadControl.files[0];
+        if(playlistFile.type != "audio/x-mpegurl" && !playlistFile.type.startsWith("text/")) {
+            alert("The playlist file does not appear to be the correct file type.");
+            return;
+        }
+
+        var reader = new FileReader();
+
+        // Heads up, this is a little bit complex as it uses some modern ES6+
+        // magic to work!
+        //
+        // We wrap the whole onload event handler in an anonymous function to
+        // past in an instance of PlaylistEditor. Then, the event handler
+        // itself uses async/await to handle tracks in the playlist serially.
+        // Basically, what happens is calling processPlaylist (an async
+        // function) runs processPlaylist without blocking the event handler.
+        //
+        // Inside processPlaylist, we loop through the list like normal, but
+        // instead of passing a callback to $.ajax, we use await with it. This
+        // pauses processing until that call returns and we get a result back.
+        //
+        // We check the value of the result; if the track is valid, just add
+        // it to the playlist. If not, display an alert to the user and abort.
+        // It's on them to manually remove tracks if something went horribly
+        // wrong with the import.
+        reader.onload = (function(inst) {
+            return function(ev) {
+                async function processPlaylist(playlist) {
+                    for(let i = 0; i < playlist.length; i++) {
+                        // skip empty lines
+                        if(playlist[i].length <= 0) {
+                            continue;
+                        }
+
+                        let newTrack = {
+                            "url": playlist[i],
+                        };
+
+                        const result = await $.ajax({
+                            url: inst.baseUrl + "/api/validate_track",
+                            dataType: "json",
+                            data: newTrack,
+                        });
+
+                        if(result['result'] == true) {
+                            newTrack['url'] = result['url'];
+                            inst.playlist.push(newTrack);
+                            inst.updatePlaylist();
+                        } else {
+                            alert("Track failed to validate: " + newTrack['url'] + "\n\nAdditional processing has been halted, but tracks that were imported up until this point will need to be manually removed.");
+                            break;
+                        }
+                    }
+                }
+
+                var newPlaylist = ev.target.result.split(/\r\n|\n|\r/);
+                processPlaylist(newPlaylist);
+
+                $('#import_m3u_modal').modal('hide');
+            }
+        })(inst);
+        reader.readAsText(playlistFile);
+    });
 };
