@@ -1,5 +1,6 @@
 from dateutil.tz import gettz, UTC
 from flask import current_app
+from .view_utils import process_url_for_display
 
 
 def localize_datetime(fromtime):
@@ -15,3 +16,7 @@ def format_datetime(value, format=None, localize=True):
 
 def tztoutc(fromtime):
     return fromtime.astimezone(UTC)
+
+
+def public_url(url):
+    return process_url_for_display(url)

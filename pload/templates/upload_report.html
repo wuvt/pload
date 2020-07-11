@@ -37,7 +37,7 @@
 {% for item in results %}
             <tr>
                 <td>{{ item.index }}</td>
-                <td><a href="{{ item.url }}">{{ item.url|urldecode|wordwrap }}</a></td>
+                <td><a href="{{ item.url|public_url }}">{{ item.url|public_url|urldecode|wordwrap }}</a></td>
                 <td>{{ item.status }}</td>
             </tr>
 {% endfor %}
