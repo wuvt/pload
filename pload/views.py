@@ -367,8 +367,11 @@ def edit_playlist(playlist_id):
     # Make sure no tracks in the playlist have been played yet
     for track in tracks.all():
         if track.played:
-            # FIXME
-            abort(400)
+            return render_template(
+                "playlist_being_played.html",
+                playlist=playlist,
+                tracks=[t.serialize() for t in tracks.all()],
+            )
 
     return render_template(
         "edit_playlist.html",
