@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block nav_index %}<li class="nav-item"><a class="nav-link active" href="{{ url_for('pload.index') }}">Scheduled Playlists</a></li>{% endblock %}
+{% block content %}
+<div class="container">
+<h1>Playlist</h1>
+
+<p>This playlist has already started playing and cannot be edited.</p>
+
+<div class="card mt-1">
+    <div class="card-body">
+        <h5 class="card-title">{% if playlist.queue != "prerecorded" %}Playlist{% else %}Prerecorded Show{% endif %}</h5>
+        <p class="card-text">Scheduled to play between {{ playlist.timeslot_start|datetime }} and {{ playlist.timeslot_end|datetime }}.</p>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">URL</th>
+                <th scope="col">Played</th>
+            </tr>
+        </thead>
+        <tbody>
+{% for track in tracks %}
+            <tr>
+                <td><a href="{{ track.url }}">{{ track.url|urldecode|wordwrap }}</a></td>
+                <td>{{ track.played }}</td>
+            </tr>
+{% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+{% endblock %}
