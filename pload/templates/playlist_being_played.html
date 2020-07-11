@@ -22,7 +22,7 @@
         <tbody>
 {% for track in tracks %}
             <tr>
-                <td><a href="{{ track.url }}">{{ track.url|urldecode|wordwrap }}</a></td>
+                <td><a href="{{ track.url|public_url }}">{{ track.url|public_url|urldecode|wordwrap }}</a></td>
                 <td>{{ track.played }}</td>
             </tr>
 {% endfor %}

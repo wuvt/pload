@@ -60,13 +60,14 @@ def setup_app(app):
 
         app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
-    from .filters import format_datetime, tztoutc
+    from .filters import format_datetime, tztoutc, public_url
 
     app.jinja_env.filters.update(
         {
             "datetime": format_datetime,
             "urldecode": urllib.parse.unquote,
             "tztoutc": tztoutc,
+            "public_url": public_url,
         }
     )
 
