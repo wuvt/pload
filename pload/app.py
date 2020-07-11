@@ -101,9 +101,37 @@ def initdb():
 @app.cli.command()
 @click.option("--json-path")
 def import_songs(json_path):
-    with app.app_context():
-        es.delete_by_query("songs", body={"query": {"match_all": {},},})
+    from elasticsearch.helpers import streaming_bulk
 
+    required_keys = ["artist", "title", "album", "label", "url"]
+
+    def generate_actions(json_path):
         data = json.load(open(json_path))
         for entry in data:
-            es.create("songs", uuid.uuid4(), body=entry)
+            for k in required_keys:
+                if entry.get(k) is None:
+                    raise Exception(
+                        "Malformed songs JSON; missing required key {0}".format(k)
+                    )
+
+            yield {
+                "_id": uuid.uuid4(),
+                **entry,
+            }
+
+    with app.app_context():
+        dest_index = "songs"
+
+        # ignore 400 caused by IndexAlreadyExistsException
+        es.indices.create(index=dest_index, ignore=400)
+
+        es.delete_by_query(dest_index, body={"query": {"match_all": {},},})
+
+        indexed = 0
+
+        for ok, _, in streaming_bulk(
+            client=es, index=dest_index, actions=generate_actions(json_path)
+        ):
+            indexed += 1
+
+        click.echo("Indexed {0} documents".format(indexed))
