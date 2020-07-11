@@ -1,7 +1,6 @@
 from collections import defaultdict
 from dateutil.tz import gettz, UTC
 import datetime
-import dateutil.parser
 from flask import (
     abort,
     Blueprint,
@@ -12,89 +11,14 @@ from flask import (
     request,
 )
 from .db import db
-from .exceptions import PlaylistExistsException, PlaylistValidationException
+from .exceptions import PlaylistValidationException
 from .filters import localize_datetime
-from .forms import PlaylistForm, PrerecordedPlaylistForm, CreatePlaylistForm
+from .forms import CreatePlaylistForm
 from .models import Playlist, QueuedTrack
 from .view_utils import process_url, get_dj_list
 
 
 bp = Blueprint("pload", __name__)
-
-
-def process_playlist_upload(
-    timeslot_start,
-    timeslot_end,
-    playlist_fo,
-    queue=None,
-    line_wrapper=None,
-    overwrite=False,
-    skip_validate=False,
-    dj_id=None,
-):
-    # if a track fails, ok will be set to False and we will roll back all
-    # changes rather than committing
-    ok = True
-    results = []
-    index = 0
-
-    # db.session.begin_nested()
-
-    existing_playlists = Playlist.query.filter(
-        Playlist.timeslot_start >= timeslot_start,
-        Playlist.timeslot_end <= timeslot_end,
-        Playlist.queue == queue,
-    )
-    if existing_playlists.count() > 0 and not overwrite:
-        raise PlaylistExistsException()
-    elif overwrite:
-        # We're overwriting, so delete all tracks for all matching
-        # playlists
-        for playlist in existing_playlists.all():
-            for track in playlist.tracks:
-                db.session.delete(track)
-            db.session.delete(playlist)
-
-    tracks_to_add = []
-
-    for line in playlist_fo:
-        url = line.strip().decode("utf-8")
-        if url.startswith("#"):
-            continue
-
-        index += 1
-
-        try:
-            url = process_url(url, skip_validate)
-        except PlaylistValidationException:
-            ok = False
-            results.append(
-                {"index": index, "url": url, "status": "Error",}
-            )
-            continue
-        else:
-            results.append(
-                {"index": index, "url": url, "status": "OK",}
-            )
-
-        if line_wrapper is not None:
-            url = line_wrapper(url)
-
-        tracks_to_add.append(url)
-
-    if ok:
-        playlist = Playlist(timeslot_start, timeslot_end, dj_id, queue)
-        db.session.add(playlist)
-        db.session.commit()
-
-        for url in tracks_to_add:
-            track = QueuedTrack(url, playlist.id)
-            db.session.add(track)
-        db.session.commit()
-    else:
-        db.session.rollback()
-
-    return ok, results
 
 
 @bp.route("/")
@@ -156,151 +80,6 @@ def index():
         )
 
     return render_template("index.html", playlist_groups=unplayed)
-
-
-@bp.route("/upload/playlist", methods=["GET", "POST"])
-def upload():
-    form = PlaylistForm()
-    form.slot.choices = list(current_app.config["TIME_SLOTS"].items())
-
-    if form.validate_on_submit():
-        slots = sorted(
-            current_app.config["TIME_SLOTS_BY_HOUR"].items(), key=lambda x: x[0]
-        )
-        slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
-
-        timeslot_start = datetime.datetime(
-            form.date.data.year,
-            form.date.data.month,
-            form.date.data.day,
-            tzinfo=slot_tz,
-        )
-        timeslot_end = datetime.datetime(
-            form.date.data.year,
-            form.date.data.month,
-            form.date.data.day,
-            tzinfo=slot_tz,
-        )
-
-        for i in range(len(slots)):
-            if slots[i][1] == form.slot.data:
-                timeslot_start = timeslot_start.replace(hour=slots[i][0])
-                if i + 1 < len(slots):
-                    timeslot_end = timeslot_start.replace(hour=slots[i + 1][0])
-                else:
-                    timeslot_end = timeslot_start.replace(hour=slots[0][0])
-                    timeslot_end += datetime.timedelta(days=1)
-                break
-
-        # convert times to UTC for querying the database
-        timeslot_start = timeslot_start.astimezone(UTC)
-        timeslot_end = timeslot_end.astimezone(UTC)
-
-        try:
-            ok, results = process_playlist_upload(
-                timeslot_start,
-                timeslot_end,
-                form.playlist.data,
-                overwrite=form.overwrite.data,
-            )
-        except PlaylistExistsException:
-            flash(
-                """\
-A playlist already exists for that date and time slot. You'll need to either
-overwrite the existing playlist, or pick another date or time slot."""
-            )
-        else:
-            if ok:
-                current_app.logger.warning(
-                    "{user} uploaded a playlist that covers {start} until {end}".format(
-                        user=request.headers.get("X-Forwarded-User"),
-                        start=timeslot_start,
-                        end=timeslot_end,
-                    )
-                )
-
-            return render_template(
-                "upload_report.html",
-                prerecorded=False,
-                timeslot_start=timeslot_start,
-                timeslot_end=timeslot_end,
-                ok=ok,
-                results=results,
-            )
-
-    return render_template("upload.html", form=form)
-
-
-@bp.route("/upload/prerecorded", methods=["GET", "POST"])
-def upload_prerecorded():
-    form = PrerecordedPlaylistForm()
-
-    # get list of DJs from Trackman and add
-    djs = get_dj_list()
-    form.dj_id.choices += [(str(dj["id"]), dj["airname"]) for dj in djs]
-
-    if form.validate_on_submit():
-        slot_tz = gettz(current_app.config["TIME_SLOT_TZ"])
-
-        timeslot_start = datetime.datetime(
-            form.date.data.year,
-            form.date.data.month,
-            form.date.data.day,
-            form.time_start.data.hour,
-            form.time_start.data.minute,
-            tzinfo=slot_tz,
-        )
-        timeslot_end = datetime.datetime(
-            form.date.data.year,
-            form.date.data.month,
-            form.date.data.day,
-            form.time_end.data.hour,
-            form.time_end.data.minute,
-            tzinfo=slot_tz,
-        )
-
-        if timeslot_end <= timeslot_start:
-            timeslot_end += datetime.timedelta(days=1)
-
-        # convert times to UTC for querying the database
-        timeslot_start = timeslot_start.astimezone(UTC)
-        timeslot_end = timeslot_end.astimezone(UTC)
-
-        try:
-            ok, results = process_playlist_upload(
-                timeslot_start,
-                timeslot_end,
-                form.playlist.data,
-                queue="prerecorded",
-                overwrite=form.overwrite.data,
-                dj_id=int(form.dj_id.data),
-            )
-        except PlaylistExistsException:
-            flash(
-                """\
-A playlist already exists for that date and time slot. You'll need to either
-overwrite the existing playlist, or pick another date or time slot."""
-            )
-        else:
-            if ok:
-                current_app.logger.warning(
-                    "{user} uploaded a prerecorded playlist that covers {start} until {end}".format(
-                        user=request.headers.get("X-Forwarded-User"),
-                        start=timeslot_start,
-                        end=timeslot_end,
-                    )
-                )
-
-            return render_template(
-                "upload_report.html",
-                prerecorded=True,
-                timeslot_start=timeslot_start,
-                timeslot_end=timeslot_end,
-                ok=ok,
-                results=results,
-            )
-
-    return render_template("upload_prerecorded.html", form=form)
 
 
 @bp.route("/playlists/edit/<int:playlist_id>", methods=["GET", "POST"])
