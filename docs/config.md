@@ -9,3 +9,5 @@
 * `TRACK_URL_DISPLAY_REWRITES` - List of tuples containing (regular expression, replacement) for rewriting displayed track URLs
 * `PROXY_FIX` - Boolean indicating whether or not to process X-Forwarded-For headers
 * `PROXY_FIX_NUM_PROXIES` - Number of proxies used for X-Forwarded-For headers
+* 
+Additional configuration options are described in the documentation for [Flask](http://flask.pocoo.org/docs/1.0/config/#builtin-configuration-values), [Flask-SQLAlchemy](http://flask-sqlalchemy.pocoo.org/2.3/config/#configuration-keys), and [Flask-WTF](https://flask-wtf.readthedocs.io/en/stable/config.html).
