@@ -1,4 +1,7 @@
 import datetime
+import mutagen
+import requests
+import tempfile
 from flask import Blueprint, jsonify, make_response, request
 from .db import db
 from .es import es
@@ -71,7 +74,35 @@ def validate_track():
     except PlaylistValidationException:
         return jsonify({"result": False})
     else:
-        return jsonify({"result": True, "url": url,})
+        result = {
+            "result": True,
+            "url": url,
+        }
+
+        if not request.args.get("skip_metadata"):
+            with tempfile.TemporaryFile() as f:
+                r = requests.get(url, stream=True)
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+
+                f.seek(0, 0)
+                m = mutagen.File(f)
+                if m is not None:
+                    tags_to_copy = ("artist", "title", "album", "label")
+                    for tag in tags_to_copy:
+                        if m.get(tag) is not None and len(m.get(tag)) > 0:
+                            result[tag] = m[tag][0]
+
+                    result.update(
+                        {
+                            "bitrate": m.info.bitrate,
+                            "sample": m.info.sample_rate,
+                            "length": int(m.info.length),
+                        }
+                    )
+
+        return jsonify(result)
 
 
 @bp.route("/search")
