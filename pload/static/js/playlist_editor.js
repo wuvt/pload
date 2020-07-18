@@ -148,12 +148,27 @@ PlaylistEditor.prototype.updatePlaylist = function() {
     }
 };
 
+PlaylistEditor.prototype.renderTrackLink = function(track) {
+    var link = $('<a>');
+    link.attr('href', this.processDisplayUrl(track['url']));
+    link.attr('rel', 'noopener');
+    link.attr('target', '_blank');
+    link.text(decodeURI(this.processDisplayUrl(track['url'])));
+    return link;
+}
+
 PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     var row = $('<tr>');
     var cols = [];
+    var urlColspan = 1;
 
     if(context == 'playlist') {
-        cols.push('offset', 'artist', 'title', 'album', 'label', 'length', 'url');
+        if(typeof track['artist'] == "undefined" && typeof track['title'] == "undefined") {
+            cols.push('offset', 'url', 'length');
+            urlColspan = 4;
+        } else {
+            cols.push('offset', 'artist', 'title', 'album', 'label', 'length');
+        }
 
         row.addClass('playlist-row');
         row.attr('data-playlist-id', track['id']);
@@ -183,6 +198,10 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
         var colName = cols[c];
         td.addClass(colName);
 
+        if(colName == 'url' && urlColspan > 1) {
+            td.attr('colspan', urlColspan);
+        }
+
         if(colName == 'length') {
             let minutes = Math.floor(track[colName] / 60);
             let seconds = track[colName] % 60;
@@ -197,12 +216,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
                 td.text(hours + ":" + minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0'));
             }
         } else if(colName == 'url') {
-            link = $('<a>');
-            link.attr('href', this.processDisplayUrl(track[colName]));
-            link.attr('rel', 'noopener');
-            link.attr('target', '_blank');
-            link.text(decodeURI(this.processDisplayUrl(track[colName])));
-            td.append(link);
+            td.append(this.renderTrackLink(track));
         } else {
             td.text(track[colName]);
         };
@@ -213,6 +227,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     // buttons
 
     var td = $('<td>');
+    td.addClass('playlist-actions-cell');
     td.addClass('text-right');
     var group = $('<div>');
     group.addClass('btn-group');
@@ -221,6 +236,28 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
 
     if(context == 'playlist') {
         group.addClass('playlist-actions');
+
+        var infoBtn = $("<button class='btn btn-secondary btn-sm playlist-info' title='View track information'><span class='oi oi-menu'></span></button>");
+        infoBtn.on('click', {'instance': this}, function(ev) {
+            let inst = ev.data.instance;
+
+            $('#track_info_url_container').html(inst.renderTrackLink(track));
+
+            if(typeof track['bitrate'] != "undefined") {
+                $('#track_info_bitrate_container').text(track['bitrate']);
+            } else {
+                $('#track_info_bitrate_container').text("Unknown");
+            }
+
+            if(typeof track['sample'] != "undefined") {
+                $('#track_info_sample_container').text(track['sample'] / 1000);
+            } else {
+                $('#track_info_sample_container').text("Unknown");
+            }
+
+            $('#track_info_modal').modal();
+        });
+        group.append(infoBtn);
 
         /*var editBtn = $("<button class='btn btn-secondary btn-sm playlist-edit' title='Edit this track'><span class='oi oi-pencil'></span></button>");
         editBtn.on('click', {'instance': this, 'context': 'playlist'},
