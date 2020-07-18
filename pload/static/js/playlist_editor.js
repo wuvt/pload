@@ -134,11 +134,17 @@ PlaylistEditor.prototype.loadPlaylist = function(existingTracks) {
 
 PlaylistEditor.prototype.updatePlaylist = function() {
     $("table#playlist tbody tr").remove();
+    var offset = 0;
     for(var i = 0; i < this.playlist.length; i++) {
         var result = this.playlist[i];
         result['id'] = i;
+        result['offset'] = offset;
         $("table#playlist tbody").append(this.renderTrackRow(
             result, 'playlist'));
+
+        if(typeof result['length'] == "number" && !Number.isNaN(result['length'])) {
+            offset += result['length'];
+        }
     }
 };
 
@@ -147,7 +153,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     var cols = [];
 
     if(context == 'playlist') {
-        cols.push('artist', 'title', 'album', 'label', 'length', 'url');
+        cols.push('offset', 'artist', 'title', 'album', 'label', 'length', 'url');
 
         row.addClass('playlist-row');
         row.attr('data-playlist-id', track['id']);
@@ -182,6 +188,13 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
             let seconds = track[colName] % 60;
             if(!Number.isNaN(minutes) && !Number.isNaN(seconds)) {
                 td.text(minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0'));
+            }
+        } else if(colName == 'offset') {
+            let hours = Math.floor(track[colName] / 3600);
+            let minutes = Math.floor(track[colName] / 60) % 3600;
+            let seconds = track[colName] % 60;
+            if(!Number.isNaN(hours) && !Number.isNaN(minutes) && !Number.isNaN(seconds)) {
+                td.text(hours + ":" + minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0'));
             }
         } else if(colName == 'url') {
             link = $('<a>');
