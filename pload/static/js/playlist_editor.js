@@ -325,6 +325,11 @@ PlaylistEditor.prototype.initImport = function() {
                             continue;
                         }
 
+                        // skip comments
+                        if(playlist[i].startsWith('#')) {
+                            continue;
+                        }
+
                         let newTrack = {
                             "url": playlist[i],
                         };
