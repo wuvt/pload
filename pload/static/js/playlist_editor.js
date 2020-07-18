@@ -317,6 +317,8 @@ PlaylistEditor.prototype.initImport = function() {
         reader.onload = (function(inst) {
             return function(ev) {
                 async function processPlaylist(playlist) {
+                    let totalTracks = 0;
+
                     for(let i = 0; i < playlist.length; i++) {
                         // skip empty lines
                         if(playlist[i].length <= 0) {
@@ -337,11 +339,15 @@ PlaylistEditor.prototype.initImport = function() {
                             newTrack['url'] = result['url'];
                             inst.playlist.push(newTrack);
                             inst.updatePlaylist();
+
+                            totalTracks++;
                         } else {
                             alert("Track failed to validate: " + newTrack['url'] + "\n\nAdditional processing has been halted, but tracks that were imported up until this point will need to be manually removed.");
                             break;
                         }
                     }
+
+                    inst.showAlert(totalTracks + " tracks imported.", 'info');
                 }
 
                 var newPlaylist = ev.target.result.split(/\r\n|\n|\r/);
@@ -352,4 +358,27 @@ PlaylistEditor.prototype.initImport = function() {
         })(inst);
         reader.readAsText(playlistFile);
     });
+};
+
+PlaylistEditor.prototype.showAlert = function(msg, severity) {
+    var alertDiv = $('<div>');
+    alertDiv.text(msg);
+
+    if(severity == 'danger') {
+        alertDiv.addClass('alert alert-danger');
+    } else if(severity == 'warning') {
+        alertDiv.addClass('alert alert-warning');
+    } else {
+        alertDiv.addClass('alert alert-info');
+    }
+
+    var closeBtn = $('<button>');
+    closeBtn.addClass('close');
+    closeBtn.attr('type', 'button');
+    closeBtn.attr('data-dismiss', 'alert');
+    closeBtn.html('&times;');
+    alertDiv.prepend(closeBtn);
+
+    $('#playlist_alerts').append(alertDiv);
+    alertDiv.show('fast');
 };

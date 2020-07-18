@@ -3,6 +3,8 @@
 {% block content %}
 <h1>{% if playlist_editor_title %}{{ playlist_editor_title }}{% else %}Playlist Editor{% endif %}</h1>
 
+<div class="floating-alerts" id="playlist_alerts"></div>
+
 <div class="card mt-1" id="playlist_card">
     <div class="card-body">
         <div class="float-right">
@@ -123,5 +125,5 @@
 {% endblock %}
 {% block js %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/playlist_editor.js', v=3) }}"></script>
+<script src="{{ url_for('static', filename='js/playlist_editor.js', v=4) }}"></script>
 {% endblock %}
