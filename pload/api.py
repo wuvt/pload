@@ -113,7 +113,7 @@ def validate_track():
 
                     result.update(
                         {
-                            "bitrate": m.info.bitrate,
+                            "bitrate": m.info.bitrate // 1000,
                             "sample": m.info.sample_rate,
                             "length": int(m.info.length),
                         }
