@@ -1,7 +1,9 @@
 import datetime
+import elasticsearch
 import mutagen
 import requests
 import tempfile
+import urllib.parse
 from flask import Blueprint, jsonify, make_response, request
 from .db import db
 from .es import es
@@ -80,6 +82,21 @@ def validate_track():
         }
 
         if not request.args.get("skip_metadata"):
+            try:
+                results = es.search(body={"query": {"match": {"url": url,}}})
+                if results is not None and len(results["hits"]) > 0:
+                    for item in results["hits"]["hits"]:
+                        # need to make sure URL is an exact match
+                        if item["_source"]["url"] == url:
+                            for k, v in item["_source"].items():
+                                result[k] = v
+                            return jsonify(result)
+            except (
+                elasticsearch.ImproperlyConfigured,
+                elasticsearch.ElasticsearchException,
+            ):
+                pass
+
             with tempfile.TemporaryFile() as f:
                 r = requests.get(url, stream=True)
                 for chunk in r.iter_content(chunk_size=8192):
