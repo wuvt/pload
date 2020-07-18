@@ -147,7 +147,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     var cols = [];
 
     if(context == 'playlist') {
-        cols.push('artist', 'title', 'album', 'label', 'url');
+        cols.push('artist', 'title', 'album', 'label', 'length', 'url');
 
         row.addClass('playlist-row');
         row.attr('data-playlist-id', track['id']);
@@ -164,7 +164,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
             track['title'] = track['song'];
         }
 
-        cols.push('artist', 'title', 'album', 'label', 'url');
+        cols.push('artist', 'title', 'album', 'label', 'length', 'url');
 
         row.attr('data-url', track['url']);
     }
@@ -177,7 +177,13 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
         var colName = cols[c];
         td.addClass(colName);
 
-        if(colName == 'url') {
+        if(colName == 'length') {
+            let minutes = Math.floor(track[colName] / 60);
+            let seconds = track[colName] % 60;
+            if(!Number.isNaN(minutes) && !Number.isNaN(seconds)) {
+                td.text(minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0'));
+            }
+        } else if(colName == 'url') {
             link = $('<a>');
             link.attr('href', this.processDisplayUrl(track[colName]));
             link.attr('rel', 'noopener');
