@@ -97,9 +97,35 @@ PlaylistEditor.prototype.dropPlaylistItem = function(ev) {
 };
 
 PlaylistEditor.prototype.loadPlaylist = function(existingTracks) {
-    for (var i = 0; i < existingTracks.length; i++) {
+    var inst = this;
+
+    for(let i = 0; i < existingTracks.length; i++) {
         this.playlist.push({
+            'track_id': existingTracks[i]['id'],
             'url': existingTracks[i]['url'],
+        });
+
+        // asynchronously load metadata for this track
+        let existingId = existingTracks[i]['id'];
+        $.ajax({
+            url: this.baseUrl + "/api/validate_track",
+            dataType: "json",
+            data: {
+                'url': existingTracks[i]['url'],
+            },
+            success: function(data) {
+                if(data['result'] == true) {
+                    // we need to walk through the entire playlist because the
+                    // order may have changed between the initial load and this
+                    // callback firing
+                    for(var j = 0; j < inst.playlist.length; j++) {
+                        if(inst.playlist[j]['track_id'] == existingId) {
+                            Object.assign(inst.playlist[j], data);
+                        }
+                    }
+                    inst.updatePlaylist();
+                }
+            },
         });
     }
 
@@ -108,12 +134,11 @@ PlaylistEditor.prototype.loadPlaylist = function(existingTracks) {
 
 PlaylistEditor.prototype.updatePlaylist = function() {
     $("table#playlist tbody tr").remove();
-    for (var i = 0; i < this.playlist.length; i++) {
+    for(var i = 0; i < this.playlist.length; i++) {
         var result = this.playlist[i];
-        $("table#playlist tbody").append(this.renderTrackRow({
-            'id': i,
-            'url': result['url'],
-        }, 'playlist'));
+        result['id'] = i;
+        $("table#playlist tbody").append(this.renderTrackRow(
+            result, 'playlist'));
     }
 };
 
@@ -122,7 +147,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     var cols = [];
 
     if(context == 'playlist') {
-        cols.push('url');
+        cols.push('artist', 'title', 'album', 'label', 'url');
 
         row.addClass('playlist-row');
         row.attr('data-playlist-id', track['id']);
@@ -220,9 +245,7 @@ PlaylistEditor.prototype.addTrack = function(ev) {
         success: function(data) {
             if(data['result'] == true) {
                 $('input#url').val('');
-                newTrack['url'] = data['url'];
-
-                inst.playlist.push(newTrack);
+                inst.playlist.push(data);
                 inst.updatePlaylist();
             } else {
                 console.log("Track failed to validate");
@@ -260,7 +283,7 @@ PlaylistEditor.prototype.searchForTracks = function(ev) {
         },
         success: function(data) {
             $("table#search_results tbody tr").remove();
-            for (var i = 0; i < data['hits'].length; i++) {
+            for(var i = 0; i < data['hits'].length; i++) {
                 var result = data['hits'][i];
                 $("table#search_results tbody").append(inst.renderTrackRow(
                     result['_source'], 'search_results'));

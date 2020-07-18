@@ -19,6 +19,14 @@ tr.playlist-row.drag-over {
     box-shadow: 0 10px #007bff;
 }
 
+#playlist_card .table th:nth-child(1),
+#playlist_card .table td:nth-child(1),
+#playlist_card .table th:nth-child(2),
+#playlist_card .table td:nth-child(2),
+#playlist_card .table th:nth-child(3),
+#playlist_card .table td:nth-child(3),
+#playlist_card .table th:nth-child(4),
+#playlist_card .table td:nth-child(4),
 #search_container .table th:nth-child(1),
 #search_container .table td:nth-child(1),
 #search_container .table th:nth-child(2),
@@ -30,11 +38,15 @@ tr.playlist-row.drag-over {
     width: 15%;
 }
 
+#playlist_card .table th:nth-child(5),
+#playlist_card .table td:nth-child(5) {
 #search_container .table th:nth-child(5),
 #search_container .table td:nth-child(5) {
     width: 25%;
 }
 
+#playlist_card .table th:nth-child(6),
+#playlist_card .table td:nth-child(6) {
 #search_container .table th:nth-child(6),
 #search_container .table td:nth-child(6) {
     width: 10%;
