@@ -348,7 +348,7 @@ PlaylistEditor.prototype.initImport = function() {
                             totalTracks++;
                         } else {
                             alert("Track failed to validate: " + newTrack['url'] + "\n\nAdditional processing has been halted, but tracks that were imported up until this point will need to be manually removed.");
-                            break;
+                            return;
                         }
                     }
 
