@@ -100,7 +100,7 @@ def initdb():
 
 
 @app.cli.command()
-@click.option("--json-path")
+@click.option("--json-path", required=True)
 def import_songs(json_path):
     from elasticsearch.helpers import streaming_bulk
 
