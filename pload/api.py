@@ -119,13 +119,16 @@ def validate_track():
                         if m.get(tag) is not None and len(m.get(tag)) > 0:
                             result[tag] = m[tag][0]
 
-                    result.update(
-                        {
-                            "bitrate": m.info.bitrate // 1000,
-                            "sample": m.info.sample_rate,
-                            "length": int(m.info.length),
-                        }
-                    )
+                    try:
+                        result.update(
+                            {
+                                "bitrate": m.info.bitrate // 1000,
+                                "sample": m.info.sample_rate,
+                                "length": int(m.info.length),
+                            }
+                        )
+                    except AttributeError:
+                        pass
 
         return jsonify(result)
 
