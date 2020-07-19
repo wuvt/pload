@@ -443,11 +443,19 @@ PlaylistEditor.prototype.initImport = function() {
                             "url": playlist[i],
                         };
 
-                        const result = await $.ajax({
-                            url: inst.baseUrl + "/api/validate_track",
-                            dataType: "json",
-                            data: newTrack,
-                        });
+                        let errorMsg = "Track failed to validate: " + newTrack['url'] + "\n\nAdditional processing has been halted, but tracks that were imported up until this point will need to be manually removed.";
+                        let result;
+
+                        try {
+                            result = await $.ajax({
+                                url: inst.baseUrl + "/api/validate_track",
+                                dataType: "json",
+                                data: newTrack,
+                            });
+                        } catch(error) {
+                            alert(errorMsg);
+                            return;
+                        }
 
                         if(result['result'] == true) {
                             inst.playlist.push(result);
@@ -455,7 +463,7 @@ PlaylistEditor.prototype.initImport = function() {
 
                             totalTracks++;
                         } else {
-                            alert("Track failed to validate: " + newTrack['url'] + "\n\nAdditional processing has been halted, but tracks that were imported up until this point will need to be manually removed.");
+                            alert(errorMsg);
                             return;
                         }
                     }
