@@ -112,7 +112,7 @@ def validate_track():
                         f.write(chunk)
 
                 f.seek(0, 0)
-                m = mutagen.File(f)
+                m = mutagen.File(f, easy=True)
                 if m is not None:
                     tags_to_copy = ("artist", "title", "album", "label")
                     for tag in tags_to_copy:
