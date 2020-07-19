@@ -5,6 +5,7 @@ function PlaylistEditor(baseUrl) {
 
 PlaylistEditor.prototype.init = function() {
     this.initPlaylist();
+    this.initResizeHandler();
 };
 
 PlaylistEditor.prototype.initPlaylist = function() {
@@ -56,6 +57,26 @@ PlaylistEditor.prototype.initPlaylist = function() {
                                      this.searchForTracks);
     $("form#playlist_search_form").on('submit', {'instance': this},
                                       this.searchForTracks);
+};
+
+PlaylistEditor.prototype.initResizeHandler = function() {
+    var inst = this;
+    var resizeTimeout;
+
+    // do an immediate resize
+    this.adjustTableWidths();
+
+    // The MDN documentation indicates that this event handler shouldn't
+    // execute computationally expensive operations directly since it can fire
+    // at a high rate, so we throttle resize events to 15 fps
+    $(window).on('resize', null, {}, function() {
+        if(!resizeTimeout) {
+            resizeTimeout = setTimeout(function() {
+                resizeTimeout = null;
+                inst.adjustTableWidths();
+            }, 66);
+        }
+    });
 };
 
 PlaylistEditor.prototype.dropPlaylistItem = function(ev) {
@@ -146,6 +167,8 @@ PlaylistEditor.prototype.updatePlaylist = function() {
             offset += result['length'];
         }
     }
+
+    $('table#playlist_header').width($('table#playlist').width());
 };
 
 PlaylistEditor.prototype.renderTrackLink = function(track) {
@@ -344,6 +367,8 @@ PlaylistEditor.prototype.searchForTracks = function(ev) {
                 $("table#search_results tbody").append(inst.renderTrackRow(
                     result['_source'], 'search_results'));
             }
+
+            $('table#search_results_header').width($('table#search_results').width());
         },
     });
 };
@@ -355,4 +380,9 @@ PlaylistEditor.prototype.processDisplayUrl = function(url) {
     }
 
     return url;
+};
+
+PlaylistEditor.prototype.adjustTableWidths = function() {
+    $('table#playlist_header').width($('table#playlist').width());
+    $('table#search_results_header').width($('table#search_results').width());
 };

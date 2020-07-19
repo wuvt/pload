@@ -13,7 +13,7 @@
         <p class="card-text">Scheduled to play between {{ playlist.timeslot_start|datetime }} and {{ playlist.timeslot_end|datetime }}.</p>
     </div>
 
-    <table class="table table-condensed mb-0">
+    <table class="table table-condensed mb-0" id="playlist_header">
         <thead>
             <tr>
                 <th>Offset</th>
@@ -73,7 +73,7 @@
             </div>
         </form>
 
-        <table class='table table-condensed mb-0'>
+        <table class='table table-condensed mb-0' id="search_results_header">
             <thead title="These are your track search results. When you enter a query above, results will appear here.">
                 <tr>
                     <th>Artist</th>
