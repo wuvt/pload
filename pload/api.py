@@ -100,7 +100,9 @@ def validate_track():
             ):
                 pass
 
-            with tempfile.TemporaryFile() as f:
+            ext = file_url.rsplit('.', 1)[-1]
+
+            with tempfile.NamedTemporaryFile(suffix='.' + ext) as f:
                 try:
                     r = requests.get(file_url, stream=True)
                     r.raise_for_status()
