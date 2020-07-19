@@ -234,7 +234,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
             }
         } else if(colName == 'offset') {
             let hours = Math.floor(track[colName] / 3600);
-            let minutes = Math.floor(track[colName] / 60) % 3600;
+            let minutes = Math.floor(track[colName] / 60) % 60;
             let seconds = track[colName] % 60;
             if(!Number.isNaN(hours) && !Number.isNaN(minutes) && !Number.isNaN(seconds)) {
                 td.text(hours + ":" + minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0'));
