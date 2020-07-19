@@ -450,8 +450,7 @@ PlaylistEditor.prototype.initImport = function() {
                         });
 
                         if(result['result'] == true) {
-                            newTrack['url'] = result['url'];
-                            inst.playlist.push(newTrack);
+                            inst.playlist.push(result);
                             inst.updatePlaylist();
 
                             totalTracks++;
