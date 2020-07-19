@@ -9,7 +9,7 @@ from .db import db
 from .es import es
 from .exceptions import PlaylistValidationException
 from .models import QueuedTrack, Playlist
-from .view_utils import require_auth, process_url
+from .view_utils import require_auth, get_file_url, process_url
 
 
 bp = Blueprint("pload_api_v1", __name__)
@@ -82,14 +82,17 @@ def validate_track():
         }
 
         if not request.args.get("skip_metadata"):
+            file_url = get_file_url(url)
+
             try:
-                results = es.search(body={"query": {"match": {"url": url,}}})
+                results = es.search(body={"query": {"match": {"url": file_url,}}})
                 if results is not None and len(results["hits"]) > 0:
                     for item in results["hits"]["hits"]:
                         # need to make sure URL is an exact match
                         if item["_source"]["url"] == url:
                             for k, v in item["_source"].items():
-                                result[k] = v
+                                if k != "url":
+                                    result[k] = v
                             return jsonify(result)
             except (
                 elasticsearch.ImproperlyConfigured,
@@ -98,7 +101,12 @@ def validate_track():
                 pass
 
             with tempfile.TemporaryFile() as f:
-                r = requests.get(url, stream=True)
+                try:
+                    r = requests.get(file_url, stream=True)
+                    r.raise_for_status()
+                except requests.exceptions.RequestException:
+                    return jsonify(result)
+
                 for chunk in r.iter_content(chunk_size=8192):
                     if chunk:
                         f.write(chunk)
