@@ -50,10 +50,10 @@ PlaylistEditor.prototype.initPlaylist = function() {
     });
     $('#playlist').on('drop', {'instance': this}, this.dropPlaylistItem);
 
-    $("button#add_track").on('click', {'instance': this},
-                             this.addTrack);
-    $("form#playlist_form").on('submit', {'instance': this},
-                               this.addTrack);
+    $("button#add_by_url_submit_btn").on('click', {'instance': this},
+                                         this.addTrack);
+    $("form#add_by_url_form").on('submit', {'instance': this},
+                                 this.addTrack);
     $("button#search_tracks_btn").on('click', {'instance': this},
                                      this.searchForTracks);
     $("form#playlist_search_form").on('submit', {'instance': this},
@@ -327,6 +327,8 @@ PlaylistEditor.prototype.addTrack = function(ev) {
                 $('input#url').val('');
                 inst.playlist.push(data);
                 inst.updatePlaylist();
+
+                $('#add_by_url_modal').modal('hide');
             } else {
                 alert("That track did not validate. Please check the URL and try again.");
                 console.log("Track failed to validate: " + JSON.stringify(newTrack));
