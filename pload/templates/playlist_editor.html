@@ -15,16 +15,30 @@
         <p class="card-text">Scheduled to play between {{ playlist.timeslot_start|datetime }} and {{ playlist.timeslot_end|datetime }}.</p>
     </div>
 
-    <table class="table table-condensed mb-0">
+    <table class="table table-condensed mb-0" id="playlist_header">
         <thead>
             <tr>
-                <th>URL</th>
+                <th>Offset</th>
+                <th>Artist</th>
+                <th>Title</th>
+                <th>Album</th>
+                <th>Label</th>
+                <th>Length</th>
                 <th></th>
             </tr>
         </thead>
     </table>
     <div id="playlist_container">
         <table class="table table-condensed table-striped table-hover" id="playlist">
+            <colgroup>
+                <col class="offset"></col>
+                <col class="artist"></col>
+                <col class="title"></col>
+                <col class="album"></col>
+                <col class="label"></col>
+                <col class="length"></col>
+                <col></col>
+            </colgroup>
             <tbody>
             </tbody>
         </table>
@@ -67,13 +81,14 @@
             </div>
         </form>
 
-        <table class='table table-condensed mb-0'>
+        <table class='table table-condensed mb-0' id="search_results_header">
             <thead title="These are your track search results. When you enter a query above, results will appear here.">
                 <tr>
                     <th>Artist</th>
                     <th>Title</th>
                     <th>Album</th>
                     <th>Label</th>
+                    <th>Length</th>
                     <th>URL</th>
                     <th></th>
                 </tr>
@@ -82,6 +97,15 @@
 
         <div id="search_results_container">
             <table class='table table-condensed table-striped table-hover mb-0' id="search_results">
+                <colgroup>
+                    <col class="artist"></col>
+                    <col class="title"></col>
+                    <col class="album"></col>
+                    <col class="label"></col>
+                    <col class="length"></col>
+                    <col class="url"></col>
+                    <col></col>
+                </colgroup>
                 <tbody>
                 </tbody>
             </table>
@@ -122,8 +146,42 @@
         </div>
     </div>
 </div>
+
+<div id="track_info_modal" role="dialog" class="modal fade" tabindex="-1"
+        aria-labelledby="track_info_modal_label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="track_info_modal_label">
+                    Track Info
+                </h4>
+                <button type="button" class="close" aria-label="Close" data-dismiss="modal">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <dl>
+                    <dt>URL</dt>
+                    <dd><span id="track_info_url_container"></span></dd>
+                </dl>
+
+                <dl>
+                    <dt>Bit Rate</dt>
+                    <dd><span id="track_info_bitrate_container"></span> kbps</dd>
+                </dl>
+
+                <dl>
+                    <dt>Sample Rate</dt>
+                    <dd><span id="track_info_sample_container"></span> kHz</dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block js %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/playlist_editor.js', v=4) }}"></script>
+<script src="{{ url_for('static', filename='js/playlist_editor.js', v=6) }}"></script>
 {% endblock %}

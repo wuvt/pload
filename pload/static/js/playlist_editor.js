@@ -6,6 +6,7 @@ function PlaylistEditor(baseUrl) {
 PlaylistEditor.prototype.init = function() {
     this.initPlaylist();
     this.initImport();
+    this.initResizeHandler();
 };
 
 PlaylistEditor.prototype.initPlaylist = function() {
@@ -59,6 +60,26 @@ PlaylistEditor.prototype.initPlaylist = function() {
                                       this.searchForTracks);
 };
 
+PlaylistEditor.prototype.initResizeHandler = function() {
+    var inst = this;
+    var resizeTimeout;
+
+    // do an immediate resize
+    this.adjustTableWidths();
+
+    // The MDN documentation indicates that this event handler shouldn't
+    // execute computationally expensive operations directly since it can fire
+    // at a high rate, so we throttle resize events to 15 fps
+    $(window).on('resize', null, {}, function() {
+        if(!resizeTimeout) {
+            resizeTimeout = setTimeout(function() {
+                resizeTimeout = null;
+                inst.adjustTableWidths();
+            }, 66);
+        }
+    });
+};
+
 PlaylistEditor.prototype.dropPlaylistItem = function(ev) {
     var inst = ev.data.instance;
     ev.preventDefault();
@@ -98,9 +119,35 @@ PlaylistEditor.prototype.dropPlaylistItem = function(ev) {
 };
 
 PlaylistEditor.prototype.loadPlaylist = function(existingTracks) {
-    for (var i = 0; i < existingTracks.length; i++) {
+    var inst = this;
+
+    for(let i = 0; i < existingTracks.length; i++) {
         this.playlist.push({
+            'track_id': existingTracks[i]['id'],
             'url': existingTracks[i]['url'],
+        });
+
+        // asynchronously load metadata for this track
+        let existingId = existingTracks[i]['id'];
+        $.ajax({
+            url: this.baseUrl + "/api/validate_track",
+            dataType: "json",
+            data: {
+                'url': existingTracks[i]['url'],
+            },
+            success: function(data) {
+                if(data['result'] == true) {
+                    // we need to walk through the entire playlist because the
+                    // order may have changed between the initial load and this
+                    // callback firing
+                    for(var j = 0; j < inst.playlist.length; j++) {
+                        if(inst.playlist[j]['track_id'] == existingId) {
+                            Object.assign(inst.playlist[j], data);
+                        }
+                    }
+                    inst.updatePlaylist();
+                }
+            },
         });
     }
 
@@ -109,21 +156,43 @@ PlaylistEditor.prototype.loadPlaylist = function(existingTracks) {
 
 PlaylistEditor.prototype.updatePlaylist = function() {
     $("table#playlist tbody tr").remove();
-    for (var i = 0; i < this.playlist.length; i++) {
+    var offset = 0;
+    for(var i = 0; i < this.playlist.length; i++) {
         var result = this.playlist[i];
-        $("table#playlist tbody").append(this.renderTrackRow({
-            'id': i,
-            'url': result['url'],
-        }, 'playlist'));
+        result['id'] = i;
+        result['offset'] = offset;
+        $("table#playlist tbody").append(this.renderTrackRow(
+            result, 'playlist'));
+
+        if(typeof result['length'] == "number" && !Number.isNaN(result['length'])) {
+            offset += result['length'];
+        }
     }
+
+    $('table#playlist_header').width($('table#playlist').width());
 };
+
+PlaylistEditor.prototype.renderTrackLink = function(track) {
+    var link = $('<a>');
+    link.attr('href', this.processDisplayUrl(track['url']));
+    link.attr('rel', 'noopener');
+    link.attr('target', '_blank');
+    link.text(decodeURI(this.processDisplayUrl(track['url'])));
+    return link;
+}
 
 PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     var row = $('<tr>');
     var cols = [];
+    var urlColspan = 1;
 
     if(context == 'playlist') {
-        cols.push('url');
+        if(typeof track['artist'] == "undefined" && typeof track['title'] == "undefined") {
+            cols.push('offset', 'url', 'length');
+            urlColspan = 4;
+        } else {
+            cols.push('offset', 'artist', 'title', 'album', 'label', 'length');
+        }
 
         row.addClass('playlist-row');
         row.attr('data-playlist-id', track['id']);
@@ -140,7 +209,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
             track['title'] = track['song'];
         }
 
-        cols.push('artist', 'title', 'album', 'label', 'url');
+        cols.push('artist', 'title', 'album', 'label', 'length', 'url');
 
         row.attr('data-url', track['url']);
     }
@@ -153,13 +222,25 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
         var colName = cols[c];
         td.addClass(colName);
 
-        if(colName == 'url') {
-            link = $('<a>');
-            link.attr('href', this.processDisplayUrl(track[colName]));
-            link.attr('rel', 'noopener');
-            link.attr('target', '_blank');
-            link.text(decodeURI(this.processDisplayUrl(track[colName])));
-            td.append(link);
+        if(colName == 'url' && urlColspan > 1) {
+            td.attr('colspan', urlColspan);
+        }
+
+        if(colName == 'length') {
+            let minutes = Math.floor(track[colName] / 60);
+            let seconds = track[colName] % 60;
+            if(!Number.isNaN(minutes) && !Number.isNaN(seconds)) {
+                td.text(minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0'));
+            }
+        } else if(colName == 'offset') {
+            let hours = Math.floor(track[colName] / 3600);
+            let minutes = Math.floor(track[colName] / 60) % 60;
+            let seconds = track[colName] % 60;
+            if(!Number.isNaN(hours) && !Number.isNaN(minutes) && !Number.isNaN(seconds)) {
+                td.text(hours + ":" + minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0'));
+            }
+        } else if(colName == 'url') {
+            td.append(this.renderTrackLink(track));
         } else {
             td.text(track[colName]);
         };
@@ -170,6 +251,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     // buttons
 
     var td = $('<td>');
+    td.addClass('playlist-actions-cell');
     td.addClass('text-right');
     var group = $('<div>');
     group.addClass('btn-group');
@@ -178,6 +260,28 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
 
     if(context == 'playlist') {
         group.addClass('playlist-actions');
+
+        var infoBtn = $("<button class='btn btn-secondary btn-sm playlist-info' title='View track information'><span class='oi oi-menu'></span></button>");
+        infoBtn.on('click', {'instance': this}, function(ev) {
+            let inst = ev.data.instance;
+
+            $('#track_info_url_container').html(inst.renderTrackLink(track));
+
+            if(typeof track['bitrate'] != "undefined") {
+                $('#track_info_bitrate_container').text(track['bitrate']);
+            } else {
+                $('#track_info_bitrate_container').text("Unknown");
+            }
+
+            if(typeof track['sample'] != "undefined") {
+                $('#track_info_sample_container').text(track['sample'] / 1000);
+            } else {
+                $('#track_info_sample_container').text("Unknown");
+            }
+
+            $('#track_info_modal').modal();
+        });
+        group.append(infoBtn);
 
         /*var editBtn = $("<button class='btn btn-secondary btn-sm playlist-edit' title='Edit this track'><span class='oi oi-pencil'></span></button>");
         editBtn.on('click', {'instance': this, 'context': 'playlist'},
@@ -221,9 +325,7 @@ PlaylistEditor.prototype.addTrack = function(ev) {
         success: function(data) {
             if(data['result'] == true) {
                 $('input#url').val('');
-                newTrack['url'] = data['url'];
-
-                inst.playlist.push(newTrack);
+                inst.playlist.push(data);
                 inst.updatePlaylist();
             } else {
                 console.log("Track failed to validate: " + JSON.stringify(newTrack));
@@ -261,11 +363,13 @@ PlaylistEditor.prototype.searchForTracks = function(ev) {
         },
         success: function(data) {
             $("table#search_results tbody tr").remove();
-            for (var i = 0; i < data['hits'].length; i++) {
+            for(var i = 0; i < data['hits'].length; i++) {
                 var result = data['hits'][i];
                 $("table#search_results tbody").append(inst.renderTrackRow(
                     result['_source'], 'search_results'));
             }
+
+            $('table#search_results_header').width($('table#search_results').width());
         },
     });
 };
@@ -277,6 +381,11 @@ PlaylistEditor.prototype.processDisplayUrl = function(url) {
     }
 
     return url;
+};
+
+PlaylistEditor.prototype.adjustTableWidths = function() {
+    $('table#playlist_header').width($('table#playlist').width());
+    $('table#search_results_header').width($('table#search_results').width());
 };
 
 PlaylistEditor.prototype.initImport = function() {
@@ -334,20 +443,27 @@ PlaylistEditor.prototype.initImport = function() {
                             "url": playlist[i],
                         };
 
-                        const result = await $.ajax({
-                            url: inst.baseUrl + "/api/validate_track",
-                            dataType: "json",
-                            data: newTrack,
-                        });
+                        let errorMsg = "Track failed to validate: " + newTrack['url'] + "\n\nAdditional processing has been halted, but tracks that were imported up until this point will need to be manually removed.";
+                        let result;
+
+                        try {
+                            result = await $.ajax({
+                                url: inst.baseUrl + "/api/validate_track",
+                                dataType: "json",
+                                data: newTrack,
+                            });
+                        } catch(error) {
+                            alert(errorMsg);
+                            return;
+                        }
 
                         if(result['result'] == true) {
-                            newTrack['url'] = result['url'];
-                            inst.playlist.push(newTrack);
+                            inst.playlist.push(result);
                             inst.updatePlaylist();
 
                             totalTracks++;
                         } else {
-                            alert("Track failed to validate: " + newTrack['url'] + "\n\nAdditional processing has been halted, but tracks that were imported up until this point will need to be manually removed.");
+                            alert(errorMsg);
                             return;
                         }
                     }

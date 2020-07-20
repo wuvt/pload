@@ -51,6 +51,25 @@ def validate_url(url):
     return True
 
 
+def get_file_url(url):
+    """Get the actual file URL, stripping any Liquidsoap-specific protocols and
+    rewriting as necessary."""
+    if url.startswith("annotate:"):
+        frags = annotate_split_re.split(url, 2)
+        return get_file_url(frags[2])
+    elif url.startswith("ffmpeg:") or url.startswith("replay_gain:"):
+        frags = url.split(":", 1)
+        return get_file_url(frags[1])
+    elif url[0:7] == "http://" or url[0:8] == "https://":
+        url = requests.utils.requote_uri(url)
+        for pattern, replacement in current_app.config["TRACK_URL_REWRITES"]:
+            pattern_re = re.compile(pattern)
+            url = pattern_re.sub(replacement, url)
+        return url
+    else:
+        return url
+
+
 def process_url(url, skip_validate=False):
     if url.startswith("annotate:"):
         frags = annotate_split_re.split(url, 2)

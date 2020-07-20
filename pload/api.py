@@ -1,10 +1,15 @@
 import datetime
+import elasticsearch
+import mutagen
+import requests
+import tempfile
+import urllib.parse
 from flask import Blueprint, jsonify, make_response, request
 from .db import db
 from .es import es
 from .exceptions import PlaylistValidationException
 from .models import QueuedTrack, Playlist
-from .view_utils import require_auth, process_url
+from .view_utils import require_auth, get_file_url, process_url
 
 
 bp = Blueprint("pload_api_v1", __name__)
@@ -71,7 +76,63 @@ def validate_track():
     except PlaylistValidationException:
         return jsonify({"result": False})
     else:
-        return jsonify({"result": True, "url": url,})
+        result = {
+            "result": True,
+            "url": url,
+        }
+
+        if not request.args.get("skip_metadata"):
+            file_url = get_file_url(url)
+
+            try:
+                results = es.search(body={"query": {"match": {"url": file_url,}}})
+                if results is not None and len(results["hits"]) > 0:
+                    for item in results["hits"]["hits"]:
+                        # need to make sure URL is an exact match
+                        if item["_source"]["url"] == url:
+                            for k, v in item["_source"].items():
+                                if k != "url":
+                                    result[k] = v
+                            return jsonify(result)
+            except (
+                elasticsearch.ImproperlyConfigured,
+                elasticsearch.ElasticsearchException,
+            ):
+                pass
+
+            ext = file_url.rsplit('.', 1)[-1]
+
+            with tempfile.NamedTemporaryFile(suffix='.' + ext) as f:
+                try:
+                    r = requests.get(file_url, stream=True)
+                    r.raise_for_status()
+                except requests.exceptions.RequestException:
+                    return jsonify(result)
+
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+
+                f.seek(0, 0)
+                m = mutagen.File(f, easy=True)
+                if m is not None:
+                    tags_to_copy = ("artist", "title", "album", "label")
+                    for tag in tags_to_copy:
+                        if m.get(tag) is not None and len(m.get(tag)) > 0:
+                            result[tag] = m[tag][0]
+
+                    try:
+                        result.update(
+                            {
+                                "bitrate": m.info.bitrate // 1000,
+                                "sample": m.info.sample_rate,
+                                "length": int(m.info.length),
+                            }
+                        )
+                    except AttributeError:
+                        pass
+
+        return jsonify(result)
 
 
 @bp.route("/search")

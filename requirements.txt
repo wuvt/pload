@@ -22,6 +22,7 @@ itsdangerous==1.1.0       # via flask
 jinja2==2.10.1            # via flask
 mako==1.1.2               # via alembic
 markupsafe==1.1.1         # via jinja2, mako
+mutagen==1.45.0           # via -r requirements.in
 paramiko==2.6.0           # via -r requirements.in
 psycopg2==2.8.5           # via -r requirements.in
 pycparser==2.19           # via cffi
