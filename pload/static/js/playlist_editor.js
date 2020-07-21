@@ -328,9 +328,14 @@ PlaylistEditor.prototype.addTrack = function(ev) {
                 inst.playlist.push(data);
                 inst.updatePlaylist();
             } else {
+                alert("That track did not validate. Please check the URL and try again.");
                 console.log("Track failed to validate: " + JSON.stringify(newTrack));
             }
         },
+        error: function(data) {
+            alert("That track did not validate. Please check the URL and try again.");
+            console.log("Track failed to validate: " + JSON.stringify(newTrack));
+        }
     });
 };
 
