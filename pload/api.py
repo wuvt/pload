@@ -100,9 +100,9 @@ def validate_track():
             ):
                 pass
 
-            ext = file_url.rsplit('.', 1)[-1]
+            ext = file_url.rsplit(".", 1)[-1]
 
-            with tempfile.NamedTemporaryFile(suffix='.' + ext) as f:
+            with tempfile.NamedTemporaryFile(suffix="." + ext) as f:
                 try:
                     r = requests.get(file_url, stream=True)
                     r.raise_for_status()
@@ -112,25 +112,29 @@ def validate_track():
                 for chunk in r.iter_content(chunk_size=8192):
                     if chunk:
                         f.write(chunk)
-
                 f.seek(0, 0)
-                m = mutagen.File(f, easy=True)
-                if m is not None:
-                    tags_to_copy = ("artist", "title", "album", "label")
-                    for tag in tags_to_copy:
-                        if m.get(tag) is not None and len(m.get(tag)) > 0:
-                            result[tag] = m[tag][0]
 
-                    try:
-                        result.update(
-                            {
-                                "bitrate": m.info.bitrate // 1000,
-                                "sample": m.info.sample_rate,
-                                "length": int(m.info.length),
-                            }
-                        )
-                    except AttributeError:
-                        pass
+                try:
+                    m = mutagen.File(f, easy=True)
+                except mutagen.MutagenError:
+                    pass
+                else:
+                    if m is not None:
+                        tags_to_copy = ("artist", "title", "album", "label")
+                        for tag in tags_to_copy:
+                            if m.get(tag) is not None and len(m.get(tag)) > 0:
+                                result[tag] = m[tag][0]
+
+                        try:
+                            result.update(
+                                {
+                                    "bitrate": m.info.bitrate // 1000,
+                                    "sample": m.info.sample_rate,
+                                    "length": int(m.info.length),
+                                }
+                            )
+                        except AttributeError:
+                            pass
 
         return jsonify(result)
 
