@@ -469,16 +469,19 @@ PlaylistEditor.prototype.initImport = function() {
                             totalTracks++;
                         } else {
                             alert(errorMsg);
+                            $('#save_changes_btn').prop('disabled', false);
                             return;
                         }
                     }
 
                     inst.showAlert(totalTracks + " tracks imported.", 'info');
+                    $('#save_changes_btn').prop('disabled', false);
                 }
 
                 var newPlaylist = ev.target.result.split(/\r\n|\n|\r/);
                 processPlaylist(newPlaylist);
 
+                $('#save_changes_btn').prop('disabled', true);
                 $('#import_m3u_modal').modal('hide');
             }
         })(inst);
