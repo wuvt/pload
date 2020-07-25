@@ -48,11 +48,11 @@
 <div class="card mt-1" id="search_container">
     <div class="card-body">
         <form id="playlist_search_form">
-            <div class="form-group row">
-                <div class="col-sm-10">
+            <div class="form-group d-flex mb-0">
+                <div class="flex-grow-1">
                     <input type="text" name="q" id="q" value="" class="form-control" placeholder="Search for tracks" title="Enter a query to search for tracks"/>
                 </div>
-                <div class="col-sm-1">
+                <div class="pl-2">
                     <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
                         <button type="button" id="search_tracks_btn" class="btn btn-info">
                             <span class="oi oi-magnifying-glass"></span>
@@ -60,15 +60,15 @@
                         </button>
 
                         <div class="btn-group" role="group">
-                            <button type="button" id="advanced_btn" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Advanced
+                            <button type="button" id="advanced_btn" class="btn btn-info dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span class="sr-only">Toggle Advanced Options</span>
                             </button>
-                            <div class="dropdown-menu" aria-labeledby="advanced_btn">
-                                <button type="button" id="add_by_url" class="btn btn-link"
+                            <div class="dropdown-menu dropdown-menu-right" aria-labeledby="advanced_btn">
+                                <button type="button" id="add_by_url" class="dropdown-item"
                                         data-toggle="modal" data-target="#add_by_url_modal">
                                     Add Track by URL
                                 </button>
-                                <button type="button" id="import_m3u" class="btn btn-link"
+                                <button type="button" id="import_m3u" class="dropdown-item"
                                         data-toggle="modal" data-target="#import_m3u_modal">
                                     Import M3U
                                 </button>
