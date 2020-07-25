@@ -9,6 +9,8 @@ playlistEditor.init();
 playlistEditor.loadPlaylist({{ tracks|tojson }});
 
 $('#save_changes_btn').on('click', function(ev) {
+    $('#save_changes_btn').prop('disabled', true);
+
     $.ajax({
         url: "{{ url_for('pload.edit_playlist', playlist_id=playlist.id) }}",
         method: "POST",
@@ -26,6 +28,12 @@ $('#save_changes_btn').on('click', function(ev) {
                     alert("An error occurred while saving the playlist.");
                 }
             }
+
+            $('#save_changes_btn').prop('disabled', false);
+        },
+        error: function(data) {
+            alert("An error occurred while saving the playlist.");
+            $('#save_changes_btn').prop('disabled', false);
         },
     });
 });
