@@ -461,6 +461,7 @@ PlaylistEditor.prototype.initImport = function() {
                             });
                         } catch(error) {
                             alert(errorMsg);
+                            $('#save_changes_btn').prop('disabled', false);
                             return;
                         }
 
