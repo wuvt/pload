@@ -261,7 +261,7 @@ PlaylistEditor.prototype.renderTrackRow = function(track, context) {
     if(context == 'playlist') {
         group.addClass('playlist-actions');
 
-        var infoBtn = $("<button class='btn btn-secondary btn-sm playlist-info' title='View track information'><span class='oi oi-menu'></span></button>");
+        var infoBtn = $("<button class='btn btn-secondary btn-sm playlist-info' title='View track information'>🛈</button>");
         infoBtn.on('click', {'instance': this}, function(ev) {
             let inst = ev.data.instance;
 
