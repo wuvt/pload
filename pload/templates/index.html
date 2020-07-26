@@ -28,7 +28,7 @@
                 <td>{{ playlist.timeslot_start|datetime("%H:%M", False) }}</td>
                 <td>{{ playlist.timeslot_end|datetime("%H:%M", False) }}</td>
                 <td>
-                    <a href="{{ url_for('pload.edit_playlist', playlist_id=playlist.id) }}" class="btn btn-secondary btn-sm playlist-edit" title="Edit this playlist"><span class="oi oi-pencil"></span></button>
+                    <a href="{{ url_for('pload.edit_playlist', playlist_id=playlist.id) }}" class="btn btn-secondary btn-sm playlist-edit" title="Edit this playlist"><span class="oi oi-pencil"></span></a>
                     {# TODO: delete playlist #}
                 </td>
             </tr>
