@@ -27,7 +27,7 @@ def next_track():
     if request.args.get("prerecorded") == "1":
         queue = "prerecorded"
     else:
-        queue = None
+        queue = "default"
 
     playlist = Playlist.query.filter(
         Playlist.timeslot_start <= now,
