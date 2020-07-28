@@ -38,7 +38,7 @@ class CreatePlaylistForm(FlaskForm):
     queue = SelectField(
         "Queue",
         choices=[
-            ("", "Default (Automatic Traffic)"),
+            ("default", "Default (Automatic Traffic)"),
             ("prerecorded", "Prerecorded (No Automatic Traffic)"),
         ],
         widget=BootstrapSelect(),
