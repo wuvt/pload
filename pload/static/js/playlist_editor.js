@@ -318,6 +318,8 @@ PlaylistEditor.prototype.addTrack = function(ev) {
         "url": $('input#url').val(),
     };
 
+    $('#add_by_url_submit_btn').prop('disabled', true);
+
     $.ajax({
         url: inst.baseUrl + "/api/validate_track",
         dataType: "json",
@@ -333,10 +335,12 @@ PlaylistEditor.prototype.addTrack = function(ev) {
                 alert("That track did not validate. Please check the URL and try again.");
                 console.log("Track failed to validate: " + JSON.stringify(newTrack));
             }
+            $('#add_by_url_submit_btn').prop('disabled', false);
         },
         error: function(data) {
             alert("That track did not validate. Please check the URL and try again.");
             console.log("Track failed to validate: " + JSON.stringify(newTrack));
+            $('#add_by_url_submit_btn').prop('disabled', false);
         }
     });
 };
