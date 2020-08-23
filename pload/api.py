@@ -33,7 +33,7 @@ def next_track():
         Playlist.timeslot_start <= now,
         Playlist.timeslot_end > now,
         Playlist.queue == queue,
-        # Playlist.approved != None,
+        Playlist.approved != None,
     ).first()
     if playlist is not None:
         next_track = (

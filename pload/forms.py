@@ -54,7 +54,6 @@ class CreatePlaylistForm(FlaskForm):
     time_end = TimeField(
         "End Time", validators=[validators.InputRequired()], widget=BootstrapTimeInput()
     )
-    overwrite = BooleanField("Overwrite the existing playlist (if one exists)")
     dj_id = SelectField("DJ", choices=[("1", "Automation")], widget=BootstrapSelect())
 
     def validate_date(self, field):
