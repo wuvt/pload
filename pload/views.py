@@ -225,8 +225,31 @@ def create_playlist():
             queue = form.queue.data
 
         existing_playlists = Playlist.query.filter(
-            Playlist.timeslot_start >= timeslot_start,
-            Playlist.timeslot_end <= timeslot_end,
+            db.or_(
+                # The new playlist is either exactly at the same time as an
+                # existing playlist or there's an existing playlist entirely
+                # inside the same time slot
+                db.and_(
+                    # An existing playlist starts after (inclusive) we do
+                    Playlist.timeslot_start >= timeslot_start,
+                    # AND that playlist ends before (inclusive) we do
+                    Playlist.timeslot_end <= timeslot_end,
+                ),
+                # The new playlist will start before an existing playlist ends
+                db.and_(
+                    # An existing playlist starts before (inclusive) we do
+                    Playlist.timeslot_start <= timeslot_start,
+                    # AND that playlist ends after we start
+                    Playlist.timeslot_end > timeslot_start,
+                ),
+                # The new playlist will end after an existing playlist starts
+                db.and_(
+                    # An existing playlist starts after (inclusive) we do
+                    Playlist.timeslot_start >= timeslot_start,
+                    # AND that playlist starts before we end
+                    Playlist.timeslot_start < timeslot_end,
+                ),
+            ),
             Playlist.queue == queue,
             Playlist.approved != None,
         )
@@ -235,8 +258,8 @@ def create_playlist():
         if existing_playlists.count() > 0:
             flash(
                 """\
-A playlist already exists for that date and time slot. You'll need to either
-delete the existing playlist or pick a different slot."""
+A playlist already exists that overlaps the date and time slot you selected.
+You'll need to either delete the existing playlist or pick a different slot."""
             )
         else:
             playlist = Playlist(
