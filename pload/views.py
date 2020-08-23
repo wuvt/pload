@@ -46,7 +46,10 @@ def index():
             tracks_sq.c.count,
         )
         .join(tracks_sq, tracks_sq.c.playlist_id == Playlist.id)
-        .filter(Playlist.timeslot_end >= datetime.datetime.utcnow(),)
+        .filter(
+            Playlist.timeslot_end >= datetime.datetime.utcnow(),
+            Playlist.approved != None,
+        )
         .order_by(Playlist.timeslot_start)
         .all()
     )
@@ -159,6 +162,28 @@ def edit_playlist(playlist_id):
     )
 
 
+@bp.route("/playlists/edit/<int:playlist_id>", methods=["DELETE"])
+def delete_playlist(playlist_id):
+    playlist = Playlist.query.get_or_404(playlist_id)
+
+    # Make sure no tracks in the playlist have been played yet
+    for track in playlist.tracks.all():
+        if track.played:
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "One or more tracks in the playlist have already been played.",
+                }
+            )
+
+    # No tracks have been played, so mark the playlist as not approved
+    # We do this instead of deleting to enable restoration of deleted playlists
+    # if necessary
+    playlist.approved = None
+    db.session.commit()
+    return jsonify({"success": True,})
+
+
 @bp.route("/playlists/new", methods=["GET", "POST"])
 def create_playlist():
     form = CreatePlaylistForm()
@@ -200,29 +225,47 @@ def create_playlist():
             queue = form.queue.data
 
         existing_playlists = Playlist.query.filter(
-            Playlist.timeslot_start >= timeslot_start,
-            Playlist.timeslot_end <= timeslot_end,
+            db.or_(
+                # The new playlist is either exactly at the same time as an
+                # existing playlist or there's an existing playlist entirely
+                # inside the same time slot
+                db.and_(
+                    # An existing playlist starts after (inclusive) we do
+                    Playlist.timeslot_start >= timeslot_start,
+                    # AND that playlist ends before (inclusive) we do
+                    Playlist.timeslot_end <= timeslot_end,
+                ),
+                # The new playlist will start before an existing playlist ends
+                db.and_(
+                    # An existing playlist starts before (inclusive) we do
+                    Playlist.timeslot_start <= timeslot_start,
+                    # AND that playlist ends after we start
+                    Playlist.timeslot_end > timeslot_start,
+                ),
+                # The new playlist will end after an existing playlist starts
+                db.and_(
+                    # An existing playlist starts after (inclusive) we do
+                    Playlist.timeslot_start >= timeslot_start,
+                    # AND that playlist starts before we end
+                    Playlist.timeslot_start < timeslot_end,
+                ),
+            ),
             Playlist.queue == queue,
+            Playlist.approved != None,
         )
 
-        # check if overwriting is necessary
-        if existing_playlists.count() > 0 and not form.overwrite.data:
+        # check for existing playlists in the same slot
+        if existing_playlists.count() > 0:
             flash(
                 """\
-A playlist already exists for that date and time slot. You'll need to either
-overwrite the existing playlist, or pick another date or time slot."""
+A playlist already exists that overlaps the date and time slot you selected.
+You'll need to either delete the existing playlist or pick a different slot."""
             )
         else:
-            # We're overwriting, so delete all tracks for all matching
-            # playlists
-            for playlist in existing_playlists.all():
-                for track in playlist.tracks:
-                    db.session.delete(track)
-                db.session.delete(playlist)
-
             playlist = Playlist(
                 timeslot_start, timeslot_end, form.dj_id.data, form.queue.data
             )
+            playlist.approved = datetime.datetime.utcnow()
             db.session.add(playlist)
 
             db.session.commit()

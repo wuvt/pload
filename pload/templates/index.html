@@ -13,23 +13,23 @@
     <table class="table table-striped table-hover">
         <thead>
             <th scope="col" width="25%"></th>
-            <th scope="col" width="40%">DJ</th>
+            <th scope="col" width="35%">DJ</th>
             <th scope="col" width="10%">Tracks</th>
             <th scope="col" width="10%">Start Time</th>
             <th scope="col" width="10%">End Time</th>
-            <th scope="col" width="5%"></th>
+            <th scope="col" width="10%"></th>
         </thead>
         <tbody>
 {% for playlist in playlists %}
-            <tr>
+            <tr data-playlist-id="{{ playlist.id }}">
                 <td>{% if playlist.queue != "prerecorded" %}Playlist{% else %}Prerecorded Show{% endif %}</td>
                 <td>{{ playlist.dj }}</td>
                 <td>{{ playlist.track_count }}</td>
                 <td>{{ playlist.timeslot_start|datetime("%H:%M", False) }}</td>
                 <td>{{ playlist.timeslot_end|datetime("%H:%M", False) }}</td>
-                <td>
+                <td class="text-right">
                     <a href="{{ url_for('pload.edit_playlist', playlist_id=playlist.id) }}" class="btn btn-secondary btn-sm playlist-edit" title="Edit this playlist"><span class="oi oi-pencil"></span></a>
-                    {# TODO: delete playlist #}
+                    <button class="btn btn-danger btn-sm playlist-delete" title="Delete this playlist"><span class="oi oi-trash"></span></button>
                 </td>
             </tr>
 {% endfor %}
@@ -37,4 +37,37 @@
     </table>
 </div>
 {% endfor %}
+{% endblock %}
+{% block js %}
+{{ super() }}
+<script nonce="{{ script_nonce }}">
+$('button.playlist-delete').on('click', function(ev) {
+    var row = $(this).parents('tr');
+    var playlistId = row.attr('data-playlist-id');
+
+    if(!confirm("Are you sure you want to delete the selected playlist?")) {
+        return;
+    }
+
+    $.ajax({
+        url: "/playlists/edit/" + playlistId,
+        method: "DELETE",
+        dataType: "json",
+        success: function(data) {
+            if(data['success']) {
+                row.remove();
+            } else {
+                if(typeof data['message'] != 'undefined') {
+                    alert(data['message']);
+                } else {
+                    alert("An error occurred while deleting that playlist.");
+                }
+            }
+        },
+        error: function(data) {
+            alert("An error occurred while deleting that playlist.");
+        },
+    });
+});
+</script>
 {% endblock %}
