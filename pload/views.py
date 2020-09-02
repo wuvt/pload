@@ -45,7 +45,7 @@ def index():
             Playlist.dj_id,
             tracks_sq.c.count,
         )
-        .join(tracks_sq, tracks_sq.c.playlist_id == Playlist.id)
+        .outerjoin(tracks_sq, tracks_sq.c.playlist_id == Playlist.id)
         .filter(
             Playlist.timeslot_end >= datetime.datetime.utcnow(),
             Playlist.approved != None,
@@ -76,7 +76,7 @@ def index():
                 "timeslot_start": timeslot_start,
                 "timeslot_end": timeslot_end,
                 "queue": queue,
-                "track_count": track_count,
+                "track_count": track_count or 0,
                 "dj_id": dj_id,
                 "dj": dj_map.get(dj_id, "[DJ #{0}]".format(dj_id)),
             }
