@@ -1,7 +1,11 @@
 # Pload
 
 Pload is a web-based playlist loader for [johnny-six](https://github.com/wuvt/johnny-six).
-It allows the user to select a time slot and upload a m3u file. The file is then
-validated, parsed, and queued in the database. To retrieve tracks, there is an
-API call that selects the first unplayed track for a time slot and returns it,
-marking it as played.
+
+It integrates a playlist builder with search using ElasticSearch. Users select
+a time range for their show, what johnny-six queue they want to play from, and
+what DJ they want johnny-six to log as. They then build or upload a playlist,
+using tracks from the search or direct URLs as they see fit.
+
+To retrieve tracks, Johnny-Six polls the API, which returns the next unplayed
+track in the current show slot, marking it as played.
