@@ -5,13 +5,12 @@
 #    pip-compile
 #
 alembic==1.4.2            # via flask-migrate
-asn1crypto==0.24.0        # via cryptography
 bcrypt==3.1.7             # via paramiko
 certifi==2019.6.16        # via elasticsearch, requests
 cffi==1.12.3              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via requests
 click==7.0                # via flask
-cryptography==2.7         # via paramiko
+cryptography==3.2         # via paramiko
 elasticsearch==7.8.0      # via -r requirements.in
 flask-migrate==2.5.3      # via -r requirements.in
 flask-sqlalchemy==2.4.1   # via -r requirements.in, flask-migrate
