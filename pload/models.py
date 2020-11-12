@@ -4,7 +4,7 @@ from .db import db
 
 class QueuedTrack(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.Unicode(255), nullable=False)
+    url = db.Column(db.Unicode(2048), nullable=False)
     played = db.Column(db.Boolean, default=False, nullable=False)
     playlist_id = db.Column(db.Integer, db.ForeignKey("playlist.id"))
     playlist = db.relationship("Playlist", backref=db.backref("tracks", lazy="dynamic"))
