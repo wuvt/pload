@@ -57,5 +57,7 @@ class CreatePlaylistForm(FlaskForm):
     dj_id = SelectField("DJ", choices=[("1", "Automation")], widget=BootstrapSelect())
 
     def validate_date(self, field):
+        if not isinstance(field.data, datetime.date):
+            raise ValidationError("A date must be provided.")
         if field.data < datetime.datetime.now(get_slot_tz()).date():
             raise ValidationError("The date cannot be in the past.")
