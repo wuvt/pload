@@ -28,8 +28,11 @@
                 <td>{{ playlist.timeslot_start|datetime("%H:%M", False) }}</td>
                 <td>{{ playlist.timeslot_end|datetime("%H:%M", False) }}</td>
                 <td class="text-right">
-                    <a href="{{ url_for('pload.edit_playlist', playlist_id=playlist.id) }}" class="btn btn-secondary btn-sm playlist-edit" title="Edit this playlist"><span class="oi oi-pencil"></span></a>
-                    <button class="btn btn-danger btn-sm playlist-delete" title="Delete this playlist"><span class="oi oi-trash"></span></button>
+                    <div class="btn-group">
+                        <a href="{{ url_for('pload.export_playlist', playlist_id=playlist.id) }}" class="btn btn-secondary btn-sm playlist-edit" title="Export this playlist as an M3U8 file"><span class="oi oi-cloud-download"></span></a>
+                        <a href="{{ url_for('pload.edit_playlist', playlist_id=playlist.id) }}" class="btn btn-secondary btn-sm playlist-edit" title="Edit this playlist"><span class="oi oi-pencil"></span></a>
+                        <button class="btn btn-danger btn-sm playlist-delete" title="Delete this playlist"><span class="oi oi-trash"></span></button>
+                    </div>
                 </td>
             </tr>
 {% endfor %}
