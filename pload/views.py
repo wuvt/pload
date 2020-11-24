@@ -85,6 +85,27 @@ def index():
     return render_template("index.html", playlist_groups=unplayed)
 
 
+@bp.route("/playlists/export/<int:playlist_id>")
+def export_playlist(playlist_id):
+    playlist = Playlist.query.get_or_404(playlist_id)
+    tracks = playlist.tracks.order_by(QueuedTrack.id)
+
+    playlist_text = ""
+    for track in tracks.all():
+        playlist_text += "{0}\n".format(track.url)
+
+    return (
+        playlist_text,
+        200,
+        {
+            "Content-Disposition": 'attachment; filename="playlist_{0}.m3u8"'.format(
+                playlist_id
+            ),
+            "Content-Type": "application/vnd.apple.mpegurl; charset=utf-8",
+        },
+    )
+
+
 @bp.route("/playlists/edit/<int:playlist_id>", methods=["GET", "POST"])
 def edit_playlist(playlist_id):
     playlist = Playlist.query.get_or_404(playlist_id)
@@ -120,12 +141,20 @@ def edit_playlist(playlist_id):
             except PlaylistValidationException:
                 ok = False
                 results.append(
-                    {"index": index, "url": url, "status": "Error",}
+                    {
+                        "index": index,
+                        "url": url,
+                        "status": "Error",
+                    }
                 )
                 continue
             else:
                 results.append(
-                    {"index": index, "url": url, "status": "OK",}
+                    {
+                        "index": index,
+                        "url": url,
+                        "status": "OK",
+                    }
                 )
 
             track = QueuedTrack(url, playlist.id)
@@ -133,7 +162,11 @@ def edit_playlist(playlist_id):
 
         if ok:
             db.session.commit()
-            return jsonify({"success": True,})
+            return jsonify(
+                {
+                    "success": True,
+                }
+            )
         else:
             db.session.rollback()
             return jsonify(
@@ -181,7 +214,11 @@ def delete_playlist(playlist_id):
     # if necessary
     playlist.approved = None
     db.session.commit()
-    return jsonify({"success": True,})
+    return jsonify(
+        {
+            "success": True,
+        }
+    )
 
 
 @bp.route("/playlists/new", methods=["GET", "POST"])
@@ -270,6 +307,10 @@ You'll need to either delete the existing playlist or pick a different slot."""
 
             db.session.commit()
 
-            return render_template("edit_playlist.html", playlist=playlist, tracks=[],)
+            return render_template(
+                "edit_playlist.html",
+                playlist=playlist,
+                tracks=[],
+            )
 
     return render_template("create_playlist.html", form=form)
