@@ -27,6 +27,17 @@ $('#save_changes_btn').on('click', function(ev) {
                 } else {
                     alert("An error occurred while saving the playlist.");
                 }
+
+                // highlight tracks that failed, if they are present in the response
+                if(typeof data['results'] == 'object') {
+                    for(let i = 0; i < data['results'].length; i++) {
+                        let row = $('#playlist tr[data-playlist-id=' + i + ']');
+                        if(typeof row != 'undefined') {
+                            row.addClass('table-danger');
+                            row.attr('title', "An error occurred with this track. Please double check it and try again.");
+                        }
+                    }
+                }
             }
 
             $('#save_changes_btn').prop('disabled', false);
