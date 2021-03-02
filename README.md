@@ -9,3 +9,10 @@ using tracks from the search or direct URLs as they see fit.
 
 To retrieve tracks, Johnny-Six polls the API, which returns the next unplayed
 track in the current show slot, marking it as played.
+
+## Local Development
+1. Copy config/config_example.json to config/config.json.
+2. Generate a random `SECRET_KEY` for config.json.
+3. Run `docker-compose up`
+4. On first run, run `docker exec -it pload_app_1 flask initdb` to create the
+   necessary database tables.

@@ -9,11 +9,15 @@ services:
     ports:
     - "9070:5000"
     volumes:
-    - ../pload-config:/data/config
-    external_links:
-    - postgres
+    - ./config:/data/config
     depends_on:
     - elasticsearch
+    - postgres
+  postgres:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: pload
+      POSTGRES_PASSWORD: hackme
   elasticsearch:
     image: elasticsearch:7.8.0
     environment:

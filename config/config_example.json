@@ -1,0 +1,8 @@
+{
+    "DEBUG": true,
+    "SECRET_KEY": "",
+    "BASIC_AUTH_USERNAME": "user",
+    "BASIC_AUTH_PASSWORD": "password",
+    "SQLALCHEMY_DATABASE_URI": "postgresql://pload:hackme@postgres/pload",
+    "TRACK_VALIDATE_CHECK_EXISTS": false
+}
