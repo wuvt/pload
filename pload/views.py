@@ -99,7 +99,7 @@ def export_playlist(playlist_id):
         200,
         {
             "Content-Disposition": 'attachment; filename="playlist_{0}.m3u8"'.format(
-                playlist_id
+                int(playlist_id)
             ),
             "Content-Type": "application/vnd.apple.mpegurl; charset=utf-8",
         },
