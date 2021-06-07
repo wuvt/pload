@@ -49,10 +49,14 @@ def create_app(config=None):
 
 def setup_app(app):
     if app.config.get("PROXY_FIX") is not None:
-        from werkzeug.contrib.fixers import ProxyFix
+        from werkzeug.middleware.proxy_fix import ProxyFix
 
         app.wsgi_app = ProxyFix(
-            app.wsgi_app, num_proxies=app.config["PROXY_FIX_NUM_PROXIES"]
+            app.wsgi_app,
+            x_for=app.config["PROXY_FIX_NUM_PROXIES"],
+            x_proto=app.config["PROXY_FIX_NUM_PROXIES"],
+            x_host=app.config["PROXY_FIX_NUM_PROXIES"],
+            x_prefix=app.config["PROXY_FIX_NUM_PROXIES"],
         )
 
     if app.debug:
