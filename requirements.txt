@@ -23,8 +23,14 @@ click==8.0.1
     # via flask
 cryptography==3.4.7
     # via paramiko
-elasticsearch==7.13.2
+elasticsearch==7.13.3
     # via -r requirements.in
+flask==2.0.1
+    # via
+    #   -r requirements.in
+    #   flask-migrate
+    #   flask-sqlalchemy
+    #   flask-wtf
 flask-migrate==3.0.1
     # via -r requirements.in
 flask-sqlalchemy==2.5.1
@@ -33,12 +39,6 @@ flask-sqlalchemy==2.5.1
     #   flask-migrate
 flask-wtf==0.15.1
     # via -r requirements.in
-flask==2.0.1
-    # via
-    #   -r requirements.in
-    #   flask-migrate
-    #   flask-sqlalchemy
-    #   flask-wtf
 greenlet==1.1.0
     # via sqlalchemy
 idna==2.10
