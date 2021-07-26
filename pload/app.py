@@ -130,7 +130,14 @@ def import_songs(json_path):
         # ignore 400 caused by IndexAlreadyExistsException
         es.indices.create(index=dest_index, ignore=400)
 
-        es.delete_by_query(dest_index, body={"query": {"match_all": {},},})
+        es.delete_by_query(
+            dest_index,
+            body={
+                "query": {
+                    "match_all": {},
+                },
+            },
+        )
 
         indexed = 0
 

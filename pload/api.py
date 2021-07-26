@@ -38,7 +38,8 @@ def next_track():
     if playlist is not None:
         next_track = (
             QueuedTrack.query.filter(
-                QueuedTrack.playlist_id == playlist.id, QueuedTrack.played == False,
+                QueuedTrack.playlist_id == playlist.id,
+                QueuedTrack.played == False,
             )
             .order_by(QueuedTrack.id)
             .first()
@@ -85,7 +86,15 @@ def validate_track():
             file_url = get_file_url(url)
 
             try:
-                results = es.search(body={"query": {"match": {"url": file_url,}}})
+                results = es.search(
+                    body={
+                        "query": {
+                            "match": {
+                                "url": file_url,
+                            }
+                        }
+                    }
+                )
                 if results is not None and len(results["hits"]) > 0:
                     for item in results["hits"]["hits"]:
                         # need to make sure URL is an exact match
@@ -97,6 +106,7 @@ def validate_track():
             except (
                 elasticsearch.ImproperlyConfigured,
                 elasticsearch.ElasticsearchException,
+                elasticsearch.exceptions.RequestError,
             ):
                 pass
 
