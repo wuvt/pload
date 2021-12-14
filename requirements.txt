@@ -23,7 +23,7 @@ click==8.0.1
     # via flask
 cryptography==3.4.7
     # via paramiko
-elasticsearch==7.13.3
+elasticsearch==7.16.1
     # via -r requirements.in
 flask==2.0.1
     # via
