@@ -17,13 +17,13 @@ cffi==1.14.5
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==4.0.0
+charset-normalizer==2.0.10
     # via requests
 click==8.0.1
     # via flask
 cryptography==3.4.7
     # via paramiko
-elasticsearch==7.16.1
+elasticsearch==7.16.3
     # via -r requirements.in
 flask==2.0.1
     # via
@@ -60,7 +60,7 @@ mutagen==1.45.1
     # via -r requirements.in
 paramiko==2.7.2
     # via -r requirements.in
-psycopg2==2.8.6
+psycopg2==2.9.3
     # via -r requirements.in
 pycparser==2.20
     # via cffi
@@ -72,7 +72,7 @@ python-dateutil==2.8.1
     #   alembic
 python-editor==1.0.4
     # via alembic
-requests==2.25.1
+requests==2.27.1
     # via -r requirements.in
 six==1.16.0
     # via
