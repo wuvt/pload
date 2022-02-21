@@ -31,7 +31,7 @@ flask==2.0.3
     #   flask-migrate
     #   flask-sqlalchemy
     #   flask-wtf
-flask-migrate==3.0.1
+flask-migrate==3.1.0
     # via -r requirements.in
 flask-sqlalchemy==2.5.1
     # via
