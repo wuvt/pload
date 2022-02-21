@@ -58,7 +58,7 @@ markupsafe==2.0.1
     #   wtforms
 mutagen==1.45.1
     # via -r requirements.in
-paramiko==2.7.2
+paramiko==2.9.2
     # via -r requirements.in
 psycopg2==2.9.3
     # via -r requirements.in
