@@ -49,7 +49,7 @@ itsdangerous==2.0.1
     #   flask-wtf
 jinja2==3.0.1
     # via flask
-mako==1.1.4
+mako==1.2.2
     # via alembic
 markupsafe==2.0.1
     # via
