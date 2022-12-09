@@ -8,7 +8,7 @@ alembic==1.6.5
     # via flask-migrate
 bcrypt==3.2.0
     # via paramiko
-certifi==2021.5.30
+certifi==2022.12.7
     # via
     #   elasticsearch
     #   requests
