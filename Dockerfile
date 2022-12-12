@@ -1,4 +1,4 @@
-FROM python:3.9.6
+FROM python:3.11.1
 
 RUN pip install --no-cache-dir uWSGI==2.0.18
 
