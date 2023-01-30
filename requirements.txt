@@ -4,7 +4,7 @@
 #
 #    pip-compile
 #
-alembic==1.6.5
+alembic==1.9.2
     # via flask-migrate
 bcrypt==3.2.0
     # via paramiko
@@ -31,7 +31,7 @@ flask==2.0.3
     #   flask-migrate
     #   flask-sqlalchemy
     #   flask-wtf
-flask-migrate==3.0.1
+flask-migrate==4.0.3
     # via -r requirements.in
 flask-sqlalchemy==2.5.1
     # via
@@ -67,11 +67,7 @@ pycparser==2.20
 pynacl==1.4.0
     # via paramiko
 python-dateutil==2.8.2
-    # via
-    #   -r requirements.in
-    #   alembic
-python-editor==1.0.4
-    # via alembic
+    # via -r requirements.in
 requests==2.27.1
     # via -r requirements.in
 six==1.16.0
