@@ -14,15 +14,15 @@ TRACKMAN_URL = "https://trackman-fm.apps.wuvt.vt.edu/"
 
 TRACK_VALIDATE_CHECK_EXISTS = True
 TRACK_URL_REWRITES = [
-    (r"^https:\/\/files\.apps\.wuvt\.vt\.edu", "http://alexandria.wuvt.vt.edu"),
+    (r"^https:\/\/files\.apps\.wuvt\.vt\.edu", "http://titanic.wuvt.vt.edu"),
     (
         r"^https:\/\/linx\.apps\.wuvt\.vt\.edu(\/[^\/]+)$",
         "https://linx.apps.wuvt.vt.edu/selif\\1",
     ),
 ]
 TRACK_URL_DISPLAY_REWRITES = [
-    (r"^http:\/\/alexandria\.wuvt\.vt\.edu", "https://files.apps.wuvt.vt.edu"),
-    (r"^http:\/\/192\.168\.0\.25", "https://files.apps.wuvt.vt.edu"),
+    (r"^http:\/\/titanic\.wuvt\.vt\.edu", "https://files.apps.wuvt.vt.edu"),
+    (r"^http:\/\/10\.23\.16\.10", "https://files.apps.wuvt.vt.edu"),
     (
         r"^https:\/\/linx\.apps\.wuvt\.vt\.edu\/selif\/",
         "https://linx.apps.wuvt.vt.edu/",
