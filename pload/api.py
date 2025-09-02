@@ -60,7 +60,7 @@ def next_track():
             return resp
 
     # if we made it here, we've run out of songs in the playlist
-    return "", 404, {"Content-Type": output_content_type}
+    return "", 204, {"Content-Type": output_content_type}
 
 
 @bp.route("/underwriting")
