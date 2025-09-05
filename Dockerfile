@@ -15,4 +15,4 @@ EXPOSE 5000
 ENV PYTHONPATH /usr/src/app
 ENV FLASK_APP pload.app
 
-CMD ["uwsgi", "--master", "--http", ":5000", "--processes", "4", "--harakiri", "90", "--module", "pload.app", "--callable", "app"]
+CMD ["uwsgi", "--master", "--http", ":5000", "-b", "32768",  "--processes", "4", "--harakiri", "90", "--module", "pload.app", "--callable", "app"]
