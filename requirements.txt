@@ -21,7 +21,7 @@ charset-normalizer==2.0.10
     # via requests
 click==8.0.1
     # via flask
-cryptography==3.4.7
+cryptography==39.0.1
     # via paramiko
 elasticsearch==7.16.3
     # via -r requirements.in
